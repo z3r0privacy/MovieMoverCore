@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Containers>
+<Container version="2">
   <Date>2020-08-19</Date>
   <Beta>True</Beta>
   <Category>MediaApp:Video MediaServer:Video</Category>
@@ -17,6 +17,7 @@
     [b][span style='color: #E80000;']Directions:[/span][/b][br]
     [b]/config[/b] : this is where PMS will store it's databases and configuration.[br][br]
     [b]Tip:[/b] You can add more volume mappings if you wish PMS has access to it. -->
+    TBD
   </Description>
   <!-- <Registry>https://registry.hub.docker.com/u/limetech/plex/</Registry> -->
   <GitHub>https://github.com/z3r0privacy/MovieMoverCore</GitHub>
@@ -24,11 +25,44 @@
   <!-- <Support>https://forums.unraid.net/topic/38974-support-limetechs-docker-repository/</Support> -->
   <BindTime>true</BindTime>
   <Privileged>false</Privileged>
-  <Networking>
+  <Network>bridge</Network>
+  <WebUI>http://[IP]:[PORT:80]/</WebUI>
+  <Config 
+       Type="Port" 
+       Name="HTTP Port" 
+       Target="80" 
+       Default="" 
+       Mode="tcp" 
+       Description="The port used for HTTP connections." 
+       Display="always" 
+       Required="true" />
+  <Config 
+       Type="Port" 
+       Name="HTTPS Port" 
+       Target="443" 
+       Default="" 
+       Mode="tcp" 
+       Description="The port used for HTTPS connections." 
+       Display="always" 
+       Required="true" />
+  <!-- <Networking>
     <Mode>bridge</Mode>
-    <Publish/>
-  </Networking>
-  <Environment/>
+    <Port>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+        <Name>Port HTTP</Name>
+        <Required>true</Required>
+        <Description>The port used for HTTP connections</Description>
+      </Port>
+    <Port>
+        <ContainerPort>443</ContainerPort>
+        <Protocol>tcp</Protocol>
+        <Name>Port HTTPS</Name>
+        <Required>true</Required>
+        <Description>The port used for HTTPS connections</Description>
+      </Port>
+  </Networking> -->
+  <!-- <Environment /> -->
   <!-- <Data>
     <Volume>
       <HostDir>/mnt/user/appdata/PlexMediaServer</HostDir>
@@ -39,4 +73,4 @@
   <WebUI>http://[IP]:[PORT:32400]/web/index.html</WebUI>
   <Banner></Banner>
   <!-- <Icon>https://d2631fvi2jdnb6.cloudfront.net/docker/limetech/plex.png</Icon> -->
-</Containers>
+</Container>
