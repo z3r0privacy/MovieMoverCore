@@ -45,6 +45,44 @@
        Description="The port used for HTTPS connections." 
        Display="always" 
        Required="true" />
+
+
+  <Config 
+       Type="Variable" 
+       Name="Plex Base URL" 
+       Target="PLEX_BaseUrl" 
+       Default="" 
+       Description="Base URL (including port) where to reach Plex webservice." 
+       Mask="false" 
+       Display="always" 
+       Required="true">https://plex_ip:32400/</Config>
+  <Config 
+       Type="Variable" 
+       Name="Plex API Token" 
+       Target="PLEX_ApiToken" 
+       Default="" 
+       Description="API Token to interact with Plex." 
+       Mask="true" 
+       Display="always" 
+       Required="true"></Config>
+  <Config 
+       Type="Variable" 
+       Name="Plex Movies Section ID" 
+       Target="PLEX_MoviesSectiond" 
+       Default="" 
+       Description="The id of the section used for movies." 
+       Mask="false" 
+       Display="always" 
+       Required="true"></Config>
+  <Config 
+       Type="Variable" 
+       Name="Plex Series Section ID" 
+       Target="PLEX_SeriesSectiond" 
+       Default="" 
+       Description="The id of the section used for series." 
+       Mask="false" 
+       Display="always" 
+       Required="true"></Config>
   <!-- <Networking>
     <Mode>bridge</Mode>
     <Port>
@@ -70,7 +108,6 @@
       <Mode>rw</Mode>
     </Volume>
   </Data> -->
-  <WebUI>http://[IP]:[PORT:32400]/web/index.html</WebUI>
   <Banner></Banner>
   <!-- <Icon>https://d2631fvi2jdnb6.cloudfront.net/docker/limetech/plex.png</Icon> -->
 </Container>
