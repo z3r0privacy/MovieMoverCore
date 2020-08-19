@@ -55,7 +55,7 @@
        Description="Base URL (including port) where to reach Plex webservice." 
        Mask="false" 
        Display="always" 
-       Required="true">https://plex_ip:32400/</Config>
+       Required="true" />
   <Config 
        Type="Variable" 
        Name="Plex API Token" 
@@ -64,7 +64,7 @@
        Description="API Token to interact with Plex." 
        Mask="true" 
        Display="always" 
-       Required="true"></Config>
+       Required="true" />
   <Config 
        Type="Variable" 
        Name="Plex Movies Section ID" 
@@ -73,7 +73,7 @@
        Description="The id of the section used for movies." 
        Mask="false" 
        Display="always" 
-       Required="true"></Config>
+       Required="true" />
   <Config 
        Type="Variable" 
        Name="Plex Series Section ID" 
@@ -82,7 +82,7 @@
        Description="The id of the section used for series." 
        Mask="false" 
        Display="always" 
-       Required="true"></Config>
+       Required="true" />
   <!-- <Networking>
     <Mode>bridge</Mode>
     <Port>
