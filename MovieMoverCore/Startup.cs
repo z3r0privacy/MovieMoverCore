@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -25,7 +26,9 @@ namespace MovieMoverCore
         public void ConfigureServices(IServiceCollection services)
         {
             services.UseSettings();
+            services.UseDatabase();
             services.UsePlex();
+            services.UseFileMover();
 
             services.AddRazorPages();
         }

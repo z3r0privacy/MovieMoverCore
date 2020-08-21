@@ -31,7 +31,7 @@
        Type="Port" 
        Name="HTTP Port" 
        Target="80" 
-       Default="8080" 
+       Default="80" 
        Mode="tcp" 
        Description="The port used for HTTP connections." 
        Display="always" 
@@ -40,7 +40,7 @@
        Type="Port" 
        Name="HTTPS Port" 
        Target="443" 
-       Default="4433" 
+       Default="443" 
        Mode="tcp" 
        Description="The port used for HTTPS connections." 
        Display="always" 
@@ -83,6 +83,90 @@
        Mask="false" 
        Display="always" 
        Required="true" />
+
+
+  <Config
+       Type="Path"
+       Name="Data share"
+       Target="/data"
+       Default="/mnt/user/PlexMedia"
+       Mode="rw"
+       Description="This is where the downloads, movies, and series are. Should be the same directory as used for the Plex docker."
+       Required="true" />
+  <Config 
+       Type="Variable" 
+       Name="Directoryname of downloads" 
+       Target="FILES_Downloads" 
+       Default="downloads" 
+       Description="The subdirectory name from the share where the downloads are." 
+       Mask="false" 
+       Display="advanced" 
+       Required="true" />
+  <Config 
+       Type="Variable" 
+       Name="Directoryname of movies" 
+       Target="FILES_Movies" 
+       Default="movies" 
+       Description="The subdirectory name from the share where the movies are." 
+       Mask="false" 
+       Display="advanced" 
+       Required="true" />
+  <Config 
+       Type="Variable" 
+       Name="Directoryname of series" 
+       Target="FILES_Series" 
+       Default="series" 
+       Description="The subdirectory name from the share where the series are." 
+       Mask="false" 
+       Display="advanced" 
+       Required="true" />
+  <Config
+       Type="Variable"
+       Name="Keep move-success time"
+       Target="FILES_KeepSuccess"
+       Default="5"
+       Description="Number of minutes the state for a successfull move operation is kept."
+       Mask="false"
+       Display="advanced"
+       Required="true" />
+
+
+  <Config
+       Type="Path"
+       Name="Application Data"
+       Target="/appdata"
+       Default="/mnt/user/appdata/moviemover"
+       Mode="rw"
+       Description="This is where the database of moviemover resides."
+       Display="advanced"
+       Required="true" />
+
+  <Config
+      Type="Variable"
+      Name="Search Path for subtitles"
+      Target="SUBS_SearchLink"
+      Default="https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search"
+      Description="The url the subtitle plugin uses to search for subtitles. 0=name,1=season,2=episode"
+      Display="advanced"
+      Required="true" />
+
+  <Config
+      Type="Variable"
+      Name="Search Path for series"
+      Target="DL_series_SearchLink"
+      Default=""
+      Description="The url the series downloader plugin uses to search for series. 0=name,1=season,2=episode"
+      Display="always"
+      Required="true" />
+
+  <Config
+      Type="Variable"
+      Name="Search Path for Episodes"
+      Target="EPGUIDE_SearchLink"
+      Default="http://epguides.com/{0}/"
+      Description="The url the epguide crawler uses to search for episode information."
+      Display="advanced"
+      Required="true" />
   <!-- <Networking>
     <Mode>bridge</Mode>
     <Port>

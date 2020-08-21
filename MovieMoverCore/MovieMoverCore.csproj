@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>36351a23-4245-43b6-a25d-25a54d51bb65</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-v "$(SolutionDir)\MovieMoverCore\secrets:/secrets:ro" -e "PLEX_BaseUrl=https://192.168.42.27:32400" -e "PLEX_MoviesSection=1" -e "PLEX_SeriesSection=2"</DockerfileRunArguments>
+    <DockerfileRunArguments>-v "$(SolutionDir)\MovieMoverCore\secrets:/secrets:ro" -e "PLEX_BaseUrl=https://192.168.42.27:32400" -e "PLEX_MoviesSection=1" -e "PLEX_SeriesSection=2" -e "FILES_Downloads=downloads" -e"FILES_Movies=movies" -e "FILES_Series=series" -e "FILES_KeepSuccess=5" -e "SUBS_SearchLink=https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search" -e "EPGUIDE_SearchLink=http://epguides.com/{0}/"</DockerfileRunArguments>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -12,7 +12,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="csvhelper" Version="15.0.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="AppData\" />
   </ItemGroup>
 
 </Project>

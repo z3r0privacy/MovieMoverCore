@@ -9,4 +9,9 @@ namespace MovieMoverCore.Models
     {
         Movies, Series
     }
+
+    public enum FileMoveState
+    {
+        Queued, Moving, Success, Failed
+    }
 }

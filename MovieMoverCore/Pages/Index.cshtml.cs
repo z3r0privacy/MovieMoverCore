@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using MovieMoverCore.Models;
 using MovieMoverCore.Services;
 
 namespace MovieMoverCore.Pages
@@ -14,8 +15,6 @@ namespace MovieMoverCore.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly IPlex _plex;
 
-        public string PlexSettings => _plex.GetSettingsInfo();
-
         public IndexModel(ILogger<IndexModel> logger, IPlex plex)
         {
             _logger = logger;
@@ -24,7 +23,24 @@ namespace MovieMoverCore.Pages
 
         public void OnGet()
         {
+            var s = new Series
+            {
+                Name = "13 Reasons Why",
+                PlexId = "125185"
+            };
+            _plex.GetFilePathOfEpisode(s, 4, 3);
+        }
 
+        public async Task OnPostSeriesnamesAsync()
+        {
+            var dat = await _plex.GetSeriesNamesAsync();
+            var s = new Series
+            {
+                PlexId = dat[5].id,
+                Name = dat[5].name
+            };
+            var r = await _plex.GetNewestEpisodeAsync(s);
+            TempData["msg"] = $"Got {dat.Count} series, the first is: {dat.First()}";
         }
     }
 }
