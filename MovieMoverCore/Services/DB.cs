@@ -21,9 +21,11 @@ namespace MovieMoverCore.Services
         Series GetSeries(int id);
         bool UpdateSeries(Series series);
         bool DeleteSeries(Series series);
+        Task SaveSeriesChangesAsync();
 
         // extra Series
-        
+        bool SeriesExists(int id);
+        List<Series> GetSeries(Func<Series, bool> selector);
 
         // CRUD ToDownload
         //TBD
@@ -35,7 +37,7 @@ namespace MovieMoverCore.Services
         private List<Series> _series;
         private ReaderWriterLockSlim _seriesRwLock;
         private static string _dbDirectory = "/appdata";
-        private static string _dbFile = Path.Combine(_dbDirectory, "db.json");
+        private static string _dbFileSeries = Path.Combine(_dbDirectory, "db.json");
 
         public DB(ILogger<DB> logger, IHostApplicationLifetime hostApplicationLifetime)
         {
@@ -49,9 +51,9 @@ namespace MovieMoverCore.Services
 
             _seriesRwLock = new ReaderWriterLockSlim();
 
-            if (File.Exists(_dbFile))
+            if (File.Exists(_dbFileSeries))
             {
-                var jsonData = File.ReadAllText(_dbFile);
+                var jsonData = File.ReadAllText(_dbFileSeries);
                 _series = JsonSerializer.Deserialize<List<Series>>(jsonData);
             } else
             {
@@ -64,7 +66,7 @@ namespace MovieMoverCore.Services
             _seriesRwLock.EnterWriteLock();
             try
             {
-                var nextId = _series.Max(s => s.Id) + 1;
+                var nextId = (_series.Any() ? _series.Max(s => s.Id) : 0 ) + 1;
                 series.Id = nextId;
                 _series.Add(series.Clone());
             } finally
@@ -92,33 +94,27 @@ namespace MovieMoverCore.Services
             }
         }
 
-        public List<Series> GetSeries()
+        public List<Series> GetSeries(Func<Series, bool> selector)
         {
             _seriesRwLock.EnterReadLock();
             try
             {
-                return _series.Select(s => s.Clone()).ToList();
-            } finally
+                return _series.Where(selector).Select(s => s.Clone()).ToList();
+            }
+            finally
             {
                 _seriesRwLock.ExitReadLock();
             }
         }
 
+        public List<Series> GetSeries()
+        {
+            return GetSeries(s => true);
+        }
+
         public Series GetSeries(int id)
         {
-            _seriesRwLock.EnterReadLock();
-            try
-            {
-                var tbr = _series.FirstOrDefault(s => s.Id == id);
-                if (tbr == null)
-                {
-                    throw new KeyNotFoundException("Could not find a series with the given id.");
-                }
-                return tbr.Clone();
-            } finally
-            {
-                _seriesRwLock.ExitReadLock();
-            }
+            return GetSeries(s => s.Id == id).FirstOrDefault();
         }
 
         public bool UpdateSeries(Series series)
@@ -136,6 +132,41 @@ namespace MovieMoverCore.Services
             } finally
             {
                 _seriesRwLock.ExitWriteLock();
+            }
+        }
+
+        public async Task SaveSeriesChangesAsync()
+        {
+            await Task.Run(() =>
+            {
+                lock (_dbFileSeries)
+                {
+                    string data;
+                    _seriesRwLock.EnterReadLock();
+                    try
+                    {
+                        data = JsonSerializer.Serialize(_series);
+
+                    }
+                    finally
+                    {
+                        _seriesRwLock.ExitReadLock();
+                    }
+
+                    File.WriteAllText(_dbFileSeries, data);
+                }
+            });
+        }
+
+        public bool SeriesExists(int id)
+        {
+            _seriesRwLock.EnterReadLock();
+            try
+            {
+                return _series.Any(s => s.Id == id);
+            } finally
+            {
+                _seriesRwLock.ExitReadLock();
             }
         }
     }

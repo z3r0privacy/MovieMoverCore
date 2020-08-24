@@ -14,20 +14,25 @@ namespace MovieMoverCore.Pages
     {
         private readonly ILogger<IndexModel> _logger;
         private readonly IPlex _plex;
+        private readonly IEpGuide _epGuide;
 
-        public IndexModel(ILogger<IndexModel> logger, IPlex plex)
+        public IndexModel(ILogger<IndexModel> logger, IPlex plex, IEpGuide epGuide)
         {
             _logger = logger;
             _plex = plex;
+            _epGuide = epGuide;
         }
 
         public void OnGet()
         {
+
             var s = new Series
             {
                 Name = "13 Reasons Why",
-                PlexId = "125185"
+                PlexId = "125185",
+                EpGuidesName = "13ReasonsWhy"
             };
+            _epGuide.GetEpisodesAsync(new EpisodeInfo { Series = s, Episode = 6, Season = 3 }).Wait();
             _plex.GetFilePathOfEpisode(s, 4, 3);
         }
 

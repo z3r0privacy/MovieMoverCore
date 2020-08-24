@@ -1,0 +1,57 @@
+﻿@page
+@model MovieMoverCore.Pages.EpisodeGuideModel
+@{
+    ViewData["Title"] = "EpisodeGuide";
+}
+
+<h1>EpisodeGuide</h1>
+<div class="container">
+    @for (var i = 0; i < Model.EpGuide.Count;)
+    {
+    <div class="row">
+        @for (var end = Math.Min(i + 3, Model.EpGuide.Count); i < end; i++)
+        {
+        <div class="col-md-4 my-2">
+            @{var s = Model.EpGuide[i];}
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">@s.newestPlexEpisode.Series.Name</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        @if (s.nextEpisode.EpisodeInfo != null)
+                        {
+                            @:New episode available!
+                        }
+                    </h6>
+                    @{var plextext = $"S{s.newestPlexEpisode.Season}E{s.newestPlexEpisode.Episode} {s.newestPlexEpisode.AirDate.ToString("dd.MM.yyy")}"; }
+                    <p class="card-text"><b>Plex:</b> @plextext<br /><i>@s.newestPlexEpisode.Title</i></p>
+                    @if (s.nextEpisode.EpisodeInfo != null)
+                    {
+                        var text = $"S{s.nextEpisode.EpisodeInfo.Season}E{s.nextEpisode.EpisodeInfo.Episode} {s.nextEpisode.EpisodeInfo.AirDate.ToString("dd.MM.yyy")}";
+                        <p class="card-text"><b>Next:</b> @text<br /><i>@s.nextEpisode.EpisodeInfo.Title</i></p>
+                        <a href="#" class="card-link">Card link</a>
+                        <a href="#" class="card-link">Another link</a>
+                    }
+                    else
+                    {
+                        <p class="card-text"><b>Next:</b> <i>Unknown</i></p>
+                    }
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+    }
+</div>
+
+
+
+
+@*<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">Card title</h5>
+        <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+        <a href="#" class="card-link">Card link</a>
+        <a href="#" class="card-link">Another link</a>
+    </div>
+</div>*@

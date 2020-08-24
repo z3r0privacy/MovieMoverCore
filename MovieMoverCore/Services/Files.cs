@@ -28,7 +28,9 @@ namespace MovieMoverCore.Services
         FileMoveOperation CreateMoviesMoveOperation(string downloadName);
         FileMoveOperation CreateSeriesMoveOperation(string downloadName, Series series, int? season);
         List<string> GetDownloadEntries();
+        List<string> GetSeriesEntries();
         Task<bool> AddSubtitle(string file, Series series);
+        bool ValidateSeriesPath(Series series, bool isNewEntry = false);
     }
 
     public class FileMoveWorker : IFileMoveWorker
@@ -311,6 +313,46 @@ namespace MovieMoverCore.Services
             }
             fullPath = null;
             return false;
+        }
+
+        public bool ValidateSeriesPath(Series series, bool isNewEntry)
+        {
+            foreach (var d in GetSeriesEntries())
+            {
+                if (string.Equals(d, series.DirectoryName, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            if (!isNewEntry)
+            {
+                return false;
+            }
+
+            var pathToCreate = Path.GetFullPath(Path.Combine(_settings.Files_SeriesPath, series.DirectoryName));
+            if (!pathToCreate.StartsWith(_settings.Files_SeriesPath + Path.DirectorySeparatorChar))
+            {
+                _logger.LogWarning($"Tried to create a directory in the path '{pathToCreate}' using argument '{series.DirectoryName}'");
+                return false;
+            }
+
+            if (pathToCreate.Count(c => c == Path.DirectorySeparatorChar) - _settings.Files_SeriesPath.Count(c => c == Path.DirectorySeparatorChar) != 1)
+            {
+                _logger.LogWarning($"Tried to create a directory in the path '{pathToCreate}' using argument '{series.DirectoryName}'");
+                return false;
+            }
+
+            Directory.CreateDirectory(pathToCreate);
+            _logger.LogInformation($"Created series directory {pathToCreate}");
+
+            return true;
+        }
+
+        public List<string> GetSeriesEntries()
+        {
+            return Directory.GetDirectories(_settings.Files_SeriesPath).Select(p => Path.GetFileName(p)).ToList();
+//            return Directory.EnumerateDirectories(_settings.Files_SeriesPath).ToList();
         }
     }
 }

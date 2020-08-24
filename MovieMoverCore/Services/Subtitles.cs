@@ -10,7 +10,7 @@ namespace MovieMoverCore.Services
     public interface ISubtitles
     {
         bool IsDirectDownloadImplemented { get; }
-        string GetDirectDownloadLink(Series series, int season, int episode);
+        Task<string> GetDirectDownloadLinkAsync(Series series, int season, int episode);
         string GetSearchLink(Series series, int season, int episode);
     }
 
@@ -25,14 +25,14 @@ namespace MovieMoverCore.Services
             _settings = settings;
         }
 
-        public string GetDirectDownloadLink(Series series, int season, int episode)
-        {
-            throw new NotImplementedException();
-        }
-
         public string GetSearchLink(Series series, int season, int episode)
         {
             return HttpUtility.UrlEncode(string.Format(_settings.Subtitles_SearchLink, series.SubtitlesName, season.ToString("00"), episode.ToString("00")));
+        }
+
+        public Task<string> GetDirectDownloadLinkAsync(Series series, int season, int episode)
+        {
+            throw new NotImplementedException();
         }
     }
 }

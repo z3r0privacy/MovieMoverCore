@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MovieMoverCore.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace MovieMoverCore
 {
@@ -29,6 +30,9 @@ namespace MovieMoverCore
             services.UseDatabase();
             services.UsePlex();
             services.UseFileMover();
+            services.UseEpGuide();
+            services.UseSeriesVideoSearcher();
+            services.UseSubtitles();
 
             services.AddRazorPages();
         }

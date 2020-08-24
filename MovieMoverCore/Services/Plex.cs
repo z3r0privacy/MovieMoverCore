@@ -22,6 +22,7 @@ namespace MovieMoverCore.Services
         void RefreshSection(PlexSection section, string path = null);
         Task<List<(string id, string name)>> GetSeriesNamesAsync();
         Task<string> GetFilePathOfEpisode(Series series, int season, int episode);
+        bool ResolvePlexId(Series series);
     }
 
     public class Plex : IPlex
@@ -148,6 +149,22 @@ namespace MovieMoverCore.Services
             }
 
             return node.SelectSingleNode("Media/Part").Attributes["file"].InnerText;
+        }
+
+        public bool ResolvePlexId(Series series)
+        {
+            var plexData = GetSeriesNamesAsync().Result;
+
+            var entry = plexData.FirstOrDefault(e => string.Equals(e.name, series.Name, StringComparison.CurrentCultureIgnoreCase));
+            if (entry == default)
+            {
+                return false;
+            }
+
+            series.Name = entry.name;
+            series.PlexId = entry.id;
+
+            return true;
         }
     }
 }

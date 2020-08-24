@@ -1,0 +1,77 @@
+﻿@page
+@model MovieMoverCore.Pages.SeriesCRUD.EditModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Series</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Series.Id" />
+            <div class="form-group">
+                <label asp-for="Series.Name" class="control-label"></label>
+                <input asp-for="Series.Name" class="form-control" list="Series_Name_List" />
+                <datalist id="Series_Name_List">
+                    @foreach (var name in Model.AvailablePlexSeries)
+                    {
+                        <option>@name</option>
+                    }
+                </datalist>
+                <span asp-validation-for="Series.Name" class="text-danger"></span>
+            </div>
+            @*<div class="form-group">
+                <label asp-for="Series.PlexId" class="control-label"></label>
+                <input asp-for="Series.PlexId" class="form-control" />
+                <span asp-validation-for="Series.PlexId" class="text-danger"></span>
+            </div>*@
+            <div class="form-group">
+                <label asp-for="Series.EpGuidesName" class="control-label"></label>
+                <input asp-for="Series.EpGuidesName" class="form-control" />
+                <span asp-validation-for="Series.EpGuidesName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Series.SubtitlesName" class="control-label"></label>
+                <input asp-for="Series.SubtitlesName" class="form-control" />
+                <span asp-validation-for="Series.SubtitlesName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Series.DirectoryName" class="control-label"></label>
+                <input asp-for="Series.DirectoryName" class="form-control" list="Series_DirectoryName_List" />
+                <datalist id="Series_DirectoryName_List">
+                    @foreach (var name in Model.AvailableDirectories)
+                    {
+                        <option>@name</option>
+                    }
+                </datalist>
+                <span asp-validation-for="Series.DirectoryName" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Series.SearchNewEpisodes" /> @Html.DisplayNameFor(model => model.Series.SearchNewEpisodes)
+                </label>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Series.IsFinished" /> @Html.DisplayNameFor(model => model.Series.IsFinished)
+                </label>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -29,5 +29,20 @@ namespace MovieMoverCore.Services
         {
             return services.AddSingleton<IDatabase, DB>();
         }
+
+        public static IServiceCollection UseEpGuide(this IServiceCollection services)
+        {
+            return services.AddTransient<IEpGuide, EpGuidesCom>();
+        }
+
+        public static IServiceCollection UseSubtitles(this IServiceCollection services)
+        {
+            return services.AddTransient<ISubtitles, Addic7ed>();
+        }
+
+        public static IServiceCollection UseSeriesVideoSearcher(this IServiceCollection services)
+        {
+            return services.AddTransient<ISeriesVideoSearcher, SeriesVideoSearcher>();
+        }
     }
 }
