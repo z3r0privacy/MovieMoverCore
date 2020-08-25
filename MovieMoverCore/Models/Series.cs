@@ -17,8 +17,10 @@ namespace MovieMoverCore.Models
         public string PlexId { get; set; }
         [DisplayName("EpGuide Search")]
         public string EpGuidesName { get; set; }
-        [DisplayName("Subtitle Search")]
+        [DisplayName("Subtitle Search Name")]
         public string SubtitlesName { get; set; }
+        [DisplayName("Video Search Name")]
+        public string VideoSearch { get; set; }
         [Required]
         [DisplayName("Directory")]
         public string DirectoryName { get; set; }
@@ -75,7 +77,24 @@ namespace MovieMoverCore.Models
                 }
                 if (string.IsNullOrWhiteSpace(SubtitlesName))
                 {
-                    errs.Add((nameof(Series) + "." + nameof(SubtitlesName), "If searching for new episodes is enabled, a search name needs to be specified."));
+                    if (isNewEntry)
+                    {
+                        SubtitlesName = Name;
+                    }
+                    else
+                    {
+                        errs.Add((nameof(Series) + "." + nameof(SubtitlesName), "If searching for new episodes is enabled, a search name needs to be specified."));
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(VideoSearch))
+                {
+                    if (isNewEntry)
+                    {
+                        VideoSearch = Name;
+                    } else
+                    {
+                        errs.Add((nameof(Series) + "." + nameof(VideoSearch), "If searching for new episodes is enabled, a search name needs to be specified."));
+                    }
                 }
             }
 
@@ -88,6 +107,22 @@ namespace MovieMoverCore.Models
             }
 
             return errs;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Series series &&
+                   Id == series.Id &&
+                   Name == series.Name &&
+                   EpGuidesName == series.EpGuidesName &&
+                   SubtitlesName == series.SubtitlesName &&
+                   VideoSearch == series.VideoSearch &&
+                   DirectoryName == series.DirectoryName;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Name, EpGuidesName, SubtitlesName, VideoSearch, DirectoryName);
         }
     }
 }

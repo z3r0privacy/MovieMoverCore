@@ -69,15 +69,22 @@ namespace MovieMoverCore.Services
 
         private ISettings _settings;
         private ILogger<EpGuidesCom> _logger;
+        private ICache<EpGuidesCom, EpisodeInfo, (List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> _cache;
 
-        public EpGuidesCom(ISettings settings, ILogger<EpGuidesCom> logger)
+        public EpGuidesCom(ISettings settings, ILogger<EpGuidesCom> logger, ICache<EpGuidesCom, EpisodeInfo, (List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> cache)
         {
             _settings = settings;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<(List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> GetEpisodesAsync(EpisodeInfo newestAvailable)
         {
+            if (_cache.Retrieve(newestAvailable, out var result))
+            {
+                return result;
+            }
+
             var wc = new WebClient();
             var mainPageData = await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName));
             var lineCsvLink = mainPageData.Split(Environment.NewLine).FirstOrDefault(l => l.Contains("exportToCSVmaze"));
@@ -114,7 +121,7 @@ namespace MovieMoverCore.Services
                 {
                     if (r.CanParseDate)
                     {
-                        if (nextAdding == null && r.AirDate <= DateTime.Now.Date)
+                        if (nextAdding == null)
                         {
                             if (r.Season > newestAvailable.Season ||
                                 (r.Season == newestAvailable.Season && r.Episode > newestAvailable.Episode))
@@ -144,6 +151,7 @@ namespace MovieMoverCore.Services
                     }
                 }
 
+                _cache.UpdateOrAdd(newestAvailable, (upcoming, nextAdding), _cache.EoD);
                 return (upcoming, nextAdding);
 
             } catch (Exception ex)

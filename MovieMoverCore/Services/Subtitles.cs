@@ -27,7 +27,7 @@ namespace MovieMoverCore.Services
 
         public string GetSearchLink(Series series, int season, int episode)
         {
-            return HttpUtility.UrlEncode(string.Format(_settings.Subtitles_SearchLink, series.SubtitlesName, season.ToString("00"), episode.ToString("00")));
+            return string.Format(_settings.Subtitles_SearchLink, HttpUtility.UrlEncode(series.SubtitlesName), season.ToString("00"), episode.ToString("00"));
         }
 
         public Task<string> GetDirectDownloadLinkAsync(Series series, int season, int episode)

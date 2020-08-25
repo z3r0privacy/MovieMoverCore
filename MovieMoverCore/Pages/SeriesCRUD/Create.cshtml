@@ -17,7 +17,7 @@
                 <label asp-for="Series.Name" class="control-label"></label>
                 <input asp-for="Series.Name" class="form-control" list="Series_Name_List" />
                 <datalist id="Series_Name_List">
-                    @foreach(var name in Model.AvailablePlexSeries)
+                    @foreach (var name in Model.AvailablePlexSeries)
                     {
                         <option>@name</option>
                     }
@@ -25,10 +25,10 @@
                 <span asp-validation-for="Series.Name" class="text-danger"></span>
             </div>
             @*<div class="form-group">
-                <label asp-for="Series.PlexId" class="control-label"></label>
-                <input asp-for="Series.PlexId" class="form-control" />
-                <span asp-validation-for="Series.PlexId" class="text-danger"></span>
-            </div>*@
+            <label asp-for="Series.PlexId" class="control-label"></label>
+            <input asp-for="Series.PlexId" class="form-control" />
+            <span asp-validation-for="Series.PlexId" class="text-danger"></span>
+        </div>*@
             <div class="form-group">
                 <label asp-for="Series.EpGuidesName" class="control-label"></label>
                 <input asp-for="Series.EpGuidesName" class="form-control" />
@@ -38,6 +38,11 @@
                 <label asp-for="Series.SubtitlesName" class="control-label"></label>
                 <input asp-for="Series.SubtitlesName" class="form-control" />
                 <span asp-validation-for="Series.SubtitlesName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Series.VideoSearch" class="control-label"></label>
+                <input asp-for="Series.VideoSearch" class="form-control" />
+                <span asp-validation-for="Series.VideoSearch" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Series.DirectoryName" class="control-label"></label>

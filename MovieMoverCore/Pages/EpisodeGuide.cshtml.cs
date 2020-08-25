@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -42,7 +44,7 @@ namespace MovieMoverCore.Pages
             {
                 EpisodeInfo = epInfo.nextAdding
             };
-            if (epInfo.nextAdding != null)
+            if (epInfo.nextAdding != null && epInfo.nextAdding.AirDate <= DateTime.Now)
             {
                 Task<string> sub = Task.FromResult<string>(null);
                 Task<List<string>> video = Task.FromResult<List<string>>(null);
@@ -54,7 +56,7 @@ namespace MovieMoverCore.Pages
                 if (_seriesVideoSearcher.IsDirectDownloadImplemented)
                 {
                     video = _seriesVideoSearcher.GetDirectDownloadLinks(series, epInfo.nextAdding.Season, epInfo.nextAdding.Episode);
-                    nextInfo.IsSubtitleDDL = true;
+                    nextInfo.IsVideoDDL = true;
                 }
 
                 try
@@ -99,17 +101,110 @@ namespace MovieMoverCore.Pages
         public async Task OnGetAsync()
         {
             var taskList = new List<Task<(EpisodeInfo newestPlexEpisode, CrawledDownloadPackage nextEpisode, List<EpisodeInfo> upcoming)>>();
+            var start = DateTime.Now;
+
             foreach (var s in _db.GetSeries(s => !s.IsFinished && s.SearchNewEpisodes))
             {
                 taskList.Add(GatherInfo(s));
             }
 
             await Task.WhenAll(taskList);
+            var time = DateTime.Now - start;
+            _logger.LogInformation($"Retrieve time: {time}");
             var results = taskList.Select(t => t.Result);
 
             UpcomingEpisodes = results.SelectMany(r => r.upcoming).ToList();
-            EpGuide = results.Select(r => (r.newestPlexEpisode, r.nextEpisode)) //.OrderBy(r => r.nextEpisode)
+            EpGuide = results.Select(r => (r.newestPlexEpisode, r.nextEpisode))
+                .OrderBy(r => r, new MyComparer())
                 .ToList();
+
+            TempData["vidDls"] = JsonSerializer.Serialize(EpGuide.Select(e => e.nextEpisode).Where(n => n.EpisodeInfo != null && n.IsVideoDDL).Select(n => new TempDlData
+            {
+                SeriesId = n.EpisodeInfo.Series.Id,
+                Links = n.VideoLink
+            }).ToList());
+
+            TempData["subDls"] = JsonSerializer.Serialize(EpGuide.Select(e => e.nextEpisode).Where(n => n.EpisodeInfo != null && n.IsSubtitleDDL).Select(n => new TempDlData
+            {
+                SeriesId = n.EpisodeInfo.Series.Id,
+                Links = new List<string>(1) { n.SubtitleLink }
+            }).ToList());
+        }
+
+        public IActionResult OnPostDownloadVideo([FromBody] int id)
+        {
+            var tmpStr = TempData["vidDls"].ToString();
+            TempData["vidDls"] = tmpStr;
+
+            var data = JsonSerializer.Deserialize<List<TempDlData>>(tmpStr);
+
+            var dl = data.FirstOrDefault(item => item.SeriesId == id);
+            if (dl == default)
+            {
+                return new JsonResult("Not Found");
+            }
+
+            return new JsonResult($"Downloading: {dl.Links.Count} links");
+        }
+
+        public IActionResult OnPostDownloadSub([FromBody] int id)
+        {
+            var tmpStr = TempData["subDls"].ToString();
+            TempData["subDls"] = tmpStr;
+
+            var data = JsonSerializer.Deserialize<List<TempDlData>>(tmpStr);
+
+            var dl = data.FirstOrDefault(item => item.SeriesId == id);
+            if (dl == default)
+            {
+                return new JsonResult("Not Found");
+            }
+
+            return new JsonResult($"Downloading: {dl.Links.Count} subs");
+        }
+
+        public string GetEpisodeString(EpisodeInfo ei)
+        {
+            return $"S{ei.Season:00}E{ei.Episode:00} {ei.AirDate:dd.MM.yyyy}<br /><i>{ei.Title}</i>";
+        }
+
+        private class TempDlData
+        {
+            public int SeriesId { get; set; }
+            public List<string> Links { get; set; }
+        }
+
+        private class MyComparer : IComparer<(EpisodeInfo newestPlexEpisode, CrawledDownloadPackage nextEpisode)>
+        {
+            public int Compare([AllowNull] (EpisodeInfo newestPlexEpisode, CrawledDownloadPackage nextEpisode) x, [AllowNull] (EpisodeInfo newestPlexEpisode, CrawledDownloadPackage nextEpisode) y)
+            {
+                if (x.nextEpisode.EpisodeInfo == null && y.nextEpisode.EpisodeInfo == null)
+                {
+                    return x.newestPlexEpisode.Series.Name.CompareTo(y.newestPlexEpisode.Series.Name);
+                }
+
+                if (x.nextEpisode.EpisodeInfo != null && y.nextEpisode.EpisodeInfo == null)
+                {
+                    return -1;
+                }
+
+                if (x.nextEpisode.EpisodeInfo == null && y.nextEpisode.EpisodeInfo != null)
+                {
+                    return 1;
+                }
+
+                if (x.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now && y.nextEpisode.EpisodeInfo.AirDate > DateTime.Now)
+                {
+                    return -1;
+                }
+
+                if (x.nextEpisode.EpisodeInfo.AirDate > DateTime.Now && y.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now)
+                {
+                    return 1;
+                }
+
+                return x.newestPlexEpisode.Series.Name.CompareTo(y.newestPlexEpisode.Series.Name);
+            }
         }
     }
 }

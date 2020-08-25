@@ -15,17 +15,19 @@ namespace MovieMoverCore.Pages
         private readonly ILogger<IndexModel> _logger;
         private readonly IPlex _plex;
         private readonly IEpGuide _epGuide;
+        private readonly IJDownloader _jd;
 
-        public IndexModel(ILogger<IndexModel> logger, IPlex plex, IEpGuide epGuide)
+        public IndexModel(ILogger<IndexModel> logger, IPlex plex, IEpGuide epGuide, IJDownloader jd)
         {
             _logger = logger;
             _plex = plex;
             _epGuide = epGuide;
+            _jd = jd;
         }
 
         public void OnGet()
         {
-
+            _jd.Test();
             var s = new Series
             {
                 Name = "13 Reasons Why",

@@ -18,6 +18,13 @@ namespace MovieMoverCore.Services
     {
         public bool IsDirectDownloadImplemented => false;
 
+        private readonly ISettings _settings;
+
+        public SeriesVideoSearcher(ISettings settings)
+        {
+            _settings = settings;
+        }
+
         public Task<List<string>> GetDirectDownloadLinks(Series series, int season, int episode)
         {
             throw new NotImplementedException();
@@ -25,7 +32,7 @@ namespace MovieMoverCore.Services
 
         public string GetSearchLink(Series series, int season, int episode)
         {
-            return "nope";
+            return string.Format(_settings.DL_Series_SearchLink, series.VideoSearch, season.ToString("00"), episode.ToString("00"));
         }
     }
 }

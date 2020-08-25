@@ -4,54 +4,87 @@
     ViewData["Title"] = "EpisodeGuide";
 }
 
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(HttpContext).RequestToken;
+    }
+}
+
+<input type="hidden" id="RequestVerificationToken"
+       name="RequestVerificationToken" value="@GetAntiXsrfRequestToken()">
+
 <h1>EpisodeGuide</h1>
 <div class="container">
     @for (var i = 0; i < Model.EpGuide.Count;)
     {
-    <div class="row">
-        @for (var end = Math.Min(i + 3, Model.EpGuide.Count); i < end; i++)
-        {
-        <div class="col-md-4 my-2">
-            @{var s = Model.EpGuide[i];}
-            <div class="card" style="width: 18rem;">
-                <div class="card-body">
-                    <h5 class="card-title">@s.newestPlexEpisode.Series.Name</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">
-                        @if (s.nextEpisode.EpisodeInfo != null)
-                        {
-                            @:New episode available!
-                        }
-                    </h6>
-                    @{var plextext = $"S{s.newestPlexEpisode.Season}E{s.newestPlexEpisode.Episode} {s.newestPlexEpisode.AirDate.ToString("dd.MM.yyy")}"; }
-                    <p class="card-text"><b>Plex:</b> @plextext<br /><i>@s.newestPlexEpisode.Title</i></p>
-                    @if (s.nextEpisode.EpisodeInfo != null)
-                    {
-                        var text = $"S{s.nextEpisode.EpisodeInfo.Season}E{s.nextEpisode.EpisodeInfo.Episode} {s.nextEpisode.EpisodeInfo.AirDate.ToString("dd.MM.yyy")}";
-                        <p class="card-text"><b>Next:</b> @text<br /><i>@s.nextEpisode.EpisodeInfo.Title</i></p>
-                        <a href="#" class="card-link">Card link</a>
-                        <a href="#" class="card-link">Another link</a>
-                    }
-                    else
-                    {
-                        <p class="card-text"><b>Next:</b> <i>Unknown</i></p>
-                    }
+        <div class="row">
+            @for (var end = Math.Min(i + 3, Model.EpGuide.Count); i < end; i++)
+            {
+                <div class="col-md-4 my-2">
+                    @{var s = Model.EpGuide[i];}
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-body">
+                            <h5 class="card-title">@s.newestPlexEpisode.Series.Name</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                @if (s.nextEpisode.EpisodeInfo != null && s.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now)
+                                {
+                                    @:New episode available!
+                                }
+                            </h6>
+                            @{var plextext = $"S{s.newestPlexEpisode.Season}E{s.newestPlexEpisode.Episode} {s.newestPlexEpisode.AirDate.ToString("dd.MM.yyy")}"; }
+                            @*<p class="card-text"><b>Plex:</b> @plextext<br /><i>@s.newestPlexEpisode.Title</i></p>*@
+                            <p class="card-text"><b>Plex:</b> @Html.Raw(Model.GetEpisodeString(s.newestPlexEpisode))</p>
+                            @if (s.nextEpisode.EpisodeInfo != null)
+                            {
+                                var text = $"S{s.nextEpisode.EpisodeInfo.Season}E{s.nextEpisode.EpisodeInfo.Episode} {s.nextEpisode.EpisodeInfo.AirDate.ToString("dd.MM.yyy")}";
+                                @*<p class="card-text"><b>Next:</b> @text<br /><i>@s.nextEpisode.EpisodeInfo.Title</i></p>*@
+                                <p class="card-text"><b>Next:</b> @Html.Raw(Model.GetEpisodeString(s.nextEpisode.EpisodeInfo))</p>
+                                @if (s.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now)
+                                {
+
+                                    @if (s.nextEpisode.IsVideoDDL)
+                                    {
+                                        <a href="#" class="card-link" onclick="dlVideo(@s.nextEpisode.EpisodeInfo.Series.Id)">Download Video</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@s.nextEpisode.VideoLink[0]" target="_blank" class="card-link">Search Video</a>
+                                    }
+                                    @if (s.nextEpisode.IsSubtitleDDL)
+                                    {
+                                        <a href="#" class="card-link" onclick="dlSub(@s.nextEpisode.EpisodeInfo.Series.Id)">Download Subtitle</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@s.nextEpisode.SubtitleLink" target="_blank" class="card-link">Search Subtitle</a>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <p class="card-text"><b>Next:</b> <i>Unknown</i></p>
+                            }
+                        </div>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
-        }
-    </div>
     }
 </div>
 
 
-
+@section Scripts {
+    <script type="text/javascript" src="~/js/epguide.js"></script>
+}
 
 @*<div class="card" style="width: 18rem;">
-    <div class="card-body">
-        <h5 class="card-title">Card title</h5>
-        <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
-        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-        <a href="#" class="card-link">Card link</a>
-        <a href="#" class="card-link">Another link</a>
-    </div>
-</div>*@
+        <div class="card-body">
+            <h5 class="card-title">Card title</h5>
+            <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            <a href="#" class="card-link">Card link</a>
+            <a href="#" class="card-link">Another link</a>
+        </div>
+    </div>*@
