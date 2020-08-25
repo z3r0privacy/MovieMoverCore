@@ -1,0 +1,10 @@
+﻿- Add startup checks -> settings and services
+- handle not reachable plex/epguides/etc
+- implement task system
+	- daily search episodes
+- invalidate caches
+	- daily clean -> in task => register clean method
+	- after series move
+	- subs/dl links
+- snahp.it autodownload
+- middleware showing errors (a.k.a. jdownloader errors)

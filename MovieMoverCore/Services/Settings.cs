@@ -24,6 +24,13 @@ namespace MovieMoverCore.Services
 
         public string Subtitles_SearchLink { get; }
         public string EpGuide_SearchLink { get; }
+        public string DL_Series_SearchLink { get; }
+
+
+        public string JD_Email { get; }
+        public string JD_Password { get;}
+        public string JD_ApiPath { get; }
+        public string JD_PreferredClient { get; }
 
         void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack);
     }
@@ -49,6 +56,15 @@ namespace MovieMoverCore.Services
 
 
         public string EpGuide_SearchLink { get; private set; }
+
+
+        public string DL_Series_SearchLink { get; private set; }
+
+
+        public string JD_Email { get; private set; }
+        public string JD_Password { get; private set; }
+        public string JD_ApiPath { get; private set; }
+        public string JD_PreferredClient { get; private set; }
 
         private List<RemoteCertificateValidationCallback> _customValidators;
 
@@ -93,6 +109,27 @@ namespace MovieMoverCore.Services
             Subtitles_SearchLink = Environment.GetEnvironmentVariable("SUBS_SearchLink");
 
             EpGuide_SearchLink = Environment.GetEnvironmentVariable("EPGUIDE_SearchLink");
+
+            DL_Series_SearchLink = Environment.GetEnvironmentVariable("DL_series_SearchLink");
+
+            JD_ApiPath = Environment.GetEnvironmentVariable("JD_ApiPath");
+            JD_Email = Environment.GetEnvironmentVariable("JD_Email");
+            JD_Password = Environment.GetEnvironmentVariable("JD_Password");
+            JD_PreferredClient = Environment.GetEnvironmentVariable("JD_PreferredClient");
+#if DEBUG
+            if (JD_Password == null && File.Exists("/secrets/jd_email.txt"))
+            {
+                JD_Email = File.ReadAllText("/secrets/jd_email.txt");
+                _logger.LogDebug("Reading JD email from secrets folder");
+            }
+#endif
+#if DEBUG
+            if (JD_Password == null && File.Exists("/secrets/jd_password.txt"))
+            {
+                JD_Password = File.ReadAllText("/secrets/jd_password.txt");
+                _logger.LogDebug("Reading JD pwd from secrets folder");
+            }
+#endif
 
             ValidateSettings();
         }

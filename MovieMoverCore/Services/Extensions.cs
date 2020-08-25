@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,6 +44,16 @@ namespace MovieMoverCore.Services
         public static IServiceCollection UseSeriesVideoSearcher(this IServiceCollection services)
         {
             return services.AddTransient<ISeriesVideoSearcher, SeriesVideoSearcher>();
+        }
+
+        public static IServiceCollection UseCache(this IServiceCollection services)
+        {
+            return services.AddSingleton(typeof(ICache<,,>), typeof(Cache<,,>));
+        }
+
+        public static IServiceCollection UseJDownloader(this IServiceCollection services)
+        {
+            return services.AddSingleton<IJDownloader, JDownloader>();
         }
     }
 }

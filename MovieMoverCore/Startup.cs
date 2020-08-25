@@ -33,6 +33,8 @@ namespace MovieMoverCore
             services.UseEpGuide();
             services.UseSeriesVideoSearcher();
             services.UseSubtitles();
+            services.UseCache();
+            services.UseJDownloader();
 
             services.AddRazorPages();
         }

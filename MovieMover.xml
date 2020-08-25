@@ -154,7 +154,7 @@
       Type="Variable"
       Name="Search Path for series"
       Target="DL_series_SearchLink"
-      Default="https://hd.yifyddl.co/?q={0}+s{1}e{2}"
+      Default="https://snahp.it/?s={0}%20s{1}e{2}"
       Description="The url the series downloader plugin uses to search for series. 0=name,1=season,2=episode"
       Display="always"
       Required="true" />
@@ -167,6 +167,40 @@
       Description="The url the epguide crawler uses to search for episode information."
       Display="advanced"
       Required="true" />
+
+  <Config
+      Type="Variable"
+      Name="API base path for JDownloader"
+      Target="JD_ApiPath"
+      Default="https://api.jdownloader.org"
+      Description=""
+      Display="advanced"
+      Required="true" />
+  <Config
+      Type="Variable"
+      Name="MyJDownloader User"
+      Target="JD_EMail"
+      Default=""
+      Description="E-Mail address of the user to use the API"
+      Display="always"
+      Required="true" />
+  <Config
+      Type="Variable"
+      Name="MyJDownloader Password"
+      Target="JD_Password"
+      Default=""
+      Description="Password of the user to use the API"
+      Display="always"
+      Mask="true"
+      Required="true" />
+  <Config
+      Type="Variable"
+      Name="Preferred JDownloader Client"
+      Target="JD_PreferredClient"
+      Default=""
+      Description="If multiple JDownloader Clients are connected, the one matching this is selected. Otherwise the selected client is unpredictable."
+      Display="advanced"
+      Required="false" />
   <!-- <Networking>
     <Mode>bridge</Mode>
     <Port>
