@@ -65,6 +65,7 @@ namespace MovieMoverCore.Services
 
         public void Test()
         {
+            return;
             JDState state;
             Server_LoginAsync().Wait();
             var devs = Server_ListDevicesAsync().Result;

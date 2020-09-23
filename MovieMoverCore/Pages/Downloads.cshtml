@@ -1,0 +1,94 @@
+﻿@page
+@model MovieMoverCore.Pages.DownloadsModel
+@{
+    ViewData["Title"] = "Downloads";
+}
+
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(HttpContext).RequestToken;
+    }
+}
+
+<input type="hidden" id="RequestVerificationToken"
+       name="RequestVerificationToken" value="@GetAntiXsrfRequestToken()">
+
+
+<h1>Downloads</h1>
+
+<div class="container">
+    <div>
+        <div class="row" id="downloadCards">
+            Loading Downloads...
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 d-flex justify-content-center">
+            <input type="button" value="Movie" onclick="void ();" class="btn btn-primary mx-2" />
+            <input type="button" value="Series" onclick="showSeriesSelector();" class="btn btn-primary mx-2" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 mx-3">
+            <h3>Pending move operations</h3>
+            <div id="moveOps"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Series Selector Modal -->
+<div class="modal fade" id="seriesSelectorModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Select Series</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="seriesSelector">Series</label>
+                        <select class="form-control" id="seriesSelector"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="season">Season</label>
+                        <input type="number" id="season" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="moveSeries();">Move</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- No Series Selected Modal -->
+<div class="modal fade" id="noSeriesSelected" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">No Series Selected</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Please select a series to move first.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/downloads.js"></script>
+}

@@ -99,7 +99,8 @@ namespace MovieMoverCore.Services
                 Source = source
             };
 
-            _allOperationsRWLock.ExitWriteLock();
+            // todo: test from here
+            _allOperationsRWLock.EnterWriteLock();
             try
             {
                 fmo.ID = _ID;

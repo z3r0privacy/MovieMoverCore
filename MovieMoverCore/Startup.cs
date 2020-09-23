@@ -36,6 +36,11 @@ namespace MovieMoverCore
             services.UseCache();
             services.UseJDownloader();
 
+
+            services.AddMvc().AddRazorPagesOptions(opts =>
+            {
+                opts.Conventions.AddPageRoute("/Downloads", "");
+            });
             services.AddRazorPages();
         }
 

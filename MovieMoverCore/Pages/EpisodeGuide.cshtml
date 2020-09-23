@@ -33,12 +33,12 @@
                                     @:New episode available!
                                 }
                             </h6>
-                            @{var plextext = $"S{s.newestPlexEpisode.Season}E{s.newestPlexEpisode.Episode} {s.newestPlexEpisode.AirDate.ToString("dd.MM.yyy")}"; }
+                            @{var plextext = $"S{s.newestPlexEpisode.Season}E{s.newestPlexEpisode.Episode} {s.newestPlexEpisode.AirDate.ToString("dd.MM.yyyy")}"; }
                             @*<p class="card-text"><b>Plex:</b> @plextext<br /><i>@s.newestPlexEpisode.Title</i></p>*@
                             <p class="card-text"><b>Plex:</b> @Html.Raw(Model.GetEpisodeString(s.newestPlexEpisode))</p>
                             @if (s.nextEpisode.EpisodeInfo != null)
                             {
-                                var text = $"S{s.nextEpisode.EpisodeInfo.Season}E{s.nextEpisode.EpisodeInfo.Episode} {s.nextEpisode.EpisodeInfo.AirDate.ToString("dd.MM.yyy")}";
+                                var text = $"S{s.nextEpisode.EpisodeInfo.Season}E{s.nextEpisode.EpisodeInfo.Episode} {s.nextEpisode.EpisodeInfo.AirDate.ToString("dd.MM.yyyy")}";
                                 @*<p class="card-text"><b>Next:</b> @text<br /><i>@s.nextEpisode.EpisodeInfo.Title</i></p>*@
                                 <p class="card-text"><b>Next:</b> @Html.Raw(Model.GetEpisodeString(s.nextEpisode.EpisodeInfo))</p>
                                 @if (s.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now)
