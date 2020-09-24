@@ -18,8 +18,18 @@ function getDownloadData() {
         contentType: 'application/json',
     })
         .done(function (result) {
+            var copy = [...selectedCards];
+            selectedCards.length = 0;
             document.getElementById("downloadCards").innerHTML = JSON.parse(result);
-            
+            for (var i = 0; i < copy.length; i++) {
+                var el = document.getElementById(copy[i]);
+                if (el) {
+                    el.classList.add("selectedCard");
+                    selectedCards.push(copy[i]);
+                }
+            }
+
+            setTimeout(getDownloadData, 5000);
     });
 }
 
@@ -65,12 +75,30 @@ function moveSeries() {
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
-    })
-        .done(function (result) {
-            alert(result);
-        });
+    });
 }
 
+function moveMovies() {
+    if (selectedCards.length === 0) {
+        $('#noMoviesSelected').modal();
+        return;
+    }
+
+    var dto = [];
+    for (var i = 0; i < selectedCards.length; i++) {
+        dto.push(selectedCards[i]);
+    }
+
+    $.ajax({
+        url: '/Downloads?handler=MoveMovies',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(dto),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    });
+}
 
 function getMoveOps() {
     $.ajax({

@@ -62,7 +62,7 @@ namespace MovieMoverCore.Services
             _allOperationsRWLock.EnterWriteLock(); 
             try
             {
-                var toRemove = _allOperations.Where(fmo => fmo.CurrentState == FileMoveState.Success && fmo.Finished.HasValue && fmo.Finished.Value.AddMinutes(_settings.Files_KeepSuccess) < DateTime.Now);
+                var toRemove = _allOperations.Where(fmo => fmo.CurrentState == FileMoveState.Success && fmo.Finished.HasValue && fmo.Finished.Value.AddMinutes(_settings.Files_KeepSuccess) < DateTime.Now).ToList();
                 if (toRemove.Any())
                 {
                     foreach (var rem in toRemove)

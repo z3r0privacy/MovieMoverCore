@@ -94,6 +94,18 @@ namespace MovieMoverCore.Pages
             return new OkResult();
         }
 
+        public IActionResult OnPostMoveMovies([FromBody] string[] moveToMovies)
+        {
+            var states = new List<FileMoveOperation>();
+            foreach (var dl in moveToMovies)
+            {
+                var s = _fileMover.CreateMoviesMoveOperation(dl);
+                states.Add(s);
+            }
+
+            return new OkResult();
+        }
+
         public IActionResult OnGetMoveStates()
         {
             var states = _fileMoveWorker.QueryStates().Select(s => new
