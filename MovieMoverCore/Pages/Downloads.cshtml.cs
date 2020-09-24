@@ -25,18 +25,19 @@ namespace MovieMoverCore.Pages
 <div class=""col-md-4 my-2"">
                 <div class=""card"" style=""width: 18rem;"" id=""{0}"" onclick=""toggleSelection('{0}');"">
                     <div class=""card-body"">
-                        <h6 class=""card-subtitle mb-2 text-muted""></h6>
-                        {0}
+                        <h6 class=""card-subtitle mb-2 text-muted"">{0}</h6>
+                        <i>State: {1}</i>
                     </div>
                 </div>
             </div>
 ";
 
-        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker)
+        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker, IJDownloader jDownloader)
         {
             _fileMover = fileMover;
             _database = database;
             _fileMoveWorker = fileMoveWorker;
+            _jDownloader = jDownloader;
         }
 
         public void OnGet()
@@ -44,13 +45,18 @@ namespace MovieMoverCore.Pages
 
         }
 
-        public IActionResult OnGetDownloadsAsync()
+        public async Task<IActionResult> OnGetDownloadsAsync()
         {
+            var downloadStatesTask = _jDownloader.QueryDownloadStatesAsync();
             var sb = new StringBuilder();
             foreach (var f in _fileMover.GetDownloadEntries().OrderBy(f => f))
             {
                 var name = Path.GetFileName(f);
-                sb.AppendLine(string.Format(_cardTemplate, name));
+
+                var states = await downloadStatesTask;
+                var state = states.FirstOrDefault(p => Path.GetFileName(p.SaveTo) == name)?.PackageState.ToString() ?? "No info found";
+
+                sb.AppendLine(string.Format(_cardTemplate, name, state));
             }
             return new JsonResult(JsonSerializer.Serialize(sb.ToString()));
         }

@@ -33,7 +33,7 @@ namespace MovieMoverCore.Services
     {
         void Test();
 
-        List<JD_FilePackage> QueryDownloadStates();
+        Task<List<JD_FilePackage>> QueryDownloadStatesAsync();
     }
 
     public class JDownloader : IJDownloader
@@ -136,28 +136,88 @@ namespace MovieMoverCore.Services
         }
 
         private static object _requireStateLock = new object();
-        private bool RequireState(JDState requiredState)
+        private bool IsReady()
         {
             lock (_requireStateLock)
             {
-                if (requiredState == _currentState)
+                // NotStarted, Ready, TimedOut, NoConnection, Overload, NoDevice, Error
+                JDState lastState;
+                bool res;
+
+                do
                 {
-                    return true;
-                }
-                return false;
+                    lastState = _currentState;
+                    res = TryRepairState();
+                } while (!res && lastState != _currentState);
+
+                return res;
             }
         }
 
-        public List<JD_FilePackage> QueryDownloadStates()
+        public async Task<List<JD_FilePackage>> QueryDownloadStatesAsync()
         {
-            return null;
+            if (!IsReady())
+            {
+                return new List<JD_FilePackage>();
+            }
+            var (state, list) = await Device_QueryDownloadPackagesAsync();
+            if (state != JDState.Ready)
+            {
+                return new List<JD_FilePackage>();
+            }
+            return list;
         }
         #endregion
 
 
         // Here, error handling and state handling is provided
         #region error and state handling
+        private bool TryRepairState()
+        {
+            switch (_currentState)
+            {
+                case JDState.Ready:
+                    return true;
+                case JDState.NoConnection:
+                case JDState.TimedOut:
+                    return true;
+                case JDState.Error:
+                    _logger.LogWarning(_lastException, "Cannot recover from error.");
+                    return false;
+                case JDState.NoDevice:
+                    var (state, devices) = Server_ListDevicesAsync().Result;
+                    if (state != JDState.Ready)
+                    {
+                        _currentState = state;
+                        return false;
+                    }
+                    if (devices.Count == 0)
+                    {
+                        return false;
+                    }
+                    if (devices.Count > 1 && !string.IsNullOrEmpty(_settings.JD_PreferredClient))
+                    {
+                        var sel = devices.FirstOrDefault(d => d.Name.Contains(_settings.JD_PreferredClient, StringComparison.CurrentCultureIgnoreCase));
+                        if (sel != null)
+                        {
+                            _selectedDeviceId = sel.Id;
+                            _currentState = JDState.Ready;
+                            return true;
+                        }
+                    }
+                    _selectedDeviceId = devices[0].Id;
+                    _currentState = JDState.Ready;
+                    return true;
+                case JDState.NotStarted:
+                    _currentState = Server_LoginAsync().Result;
+                    return false;
+                case JDState.Overload:
+                    _logger.LogWarning("Cannot recover from overload");
+                    return false;
+            }
 
+            return false;
+        }
         #endregion
 
 
@@ -302,7 +362,7 @@ namespace MovieMoverCore.Services
                 _deviceEncryptionToken = CalcSecret(_deviceSecret, _sessionToken);
                 _serverEncryptionToken = CalcSecret(loginSecret, _sessionToken);
 
-                return JDState.Ready;
+                return JDState.NoDevice;
             }
             catch (Exception ex)
             {
