@@ -129,6 +129,11 @@ namespace MovieMoverCore.Services
                     {
                         if (Directory.Exists(moveOp.Source))
                         {
+                            var parentDir = Path.GetDirectoryName(moveOp.Destination);
+                            if (!Directory.Exists(parentDir))
+                            {
+                                Directory.CreateDirectory(parentDir);
+                            }
                             Directory.Move(moveOp.Source, moveOp.Destination);
                         }
                         else if (File.Exists(moveOp.Source))

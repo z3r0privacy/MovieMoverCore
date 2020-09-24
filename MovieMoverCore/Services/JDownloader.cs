@@ -27,11 +27,13 @@ namespace MovieMoverCore.Services
 {
     public enum JDState
     {
-        UnInit, Ready, TimedOut, NoConnection, Overload, NoDevice, Error
+        NotStarted, Ready, TimedOut, NoConnection, Overload, NoDevice, Error
     }
     public interface IJDownloader
     {
         void Test();
+
+        List<JD_FilePackage> QueryDownloadStates();
     }
 
     public class JDownloader : IJDownloader
@@ -54,6 +56,7 @@ namespace MovieMoverCore.Services
         private int RID => Interlocked.Increment(ref _rid);
 
         private Exception _lastException;
+        private JDState _currentState;
         
         public JDownloader(ISettings settings, ILogger<JDownloader> logger)
         {
@@ -61,6 +64,7 @@ namespace MovieMoverCore.Services
             _logger = logger;
             _sha256Alg = SHA256.Create();
             _appKey = "MovieMover";
+            _currentState = JDState.NotStarted;
         }
 
         public void Test()
@@ -129,6 +133,24 @@ namespace MovieMoverCore.Services
             // try to exec
             // if fail, try to repair (general repair method using states)
             // retry
+        }
+
+        private static object _requireStateLock = new object();
+        private bool RequireState(JDState requiredState)
+        {
+            lock (_requireStateLock)
+            {
+                if (requiredState == _currentState)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public List<JD_FilePackage> QueryDownloadStates()
+        {
+            return null;
         }
         #endregion
 

@@ -18,6 +18,7 @@ namespace MovieMoverCore.Pages
         private IFileMover _fileMover;
         private IFileMoveWorker _fileMoveWorker;
         private IDatabase _database;
+        private IJDownloader _jDownloader;
 
 
         private string _cardTemplate = @"
