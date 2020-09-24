@@ -104,7 +104,7 @@ namespace MovieMoverCore.Services
                 throw new ArgumentException();
             }
 
-            var query = $"{_settings.Plex_BaseUrl}sections/{refreshId}/refresh?X-Plex-Token={{0}}";
+            var query = $"{_settings.Plex_BaseUrl}library/sections/{refreshId}/refresh?X-Plex-Token={{0}}";
             if (path != null)
             {
                 query += $"&path={HttpUtility.UrlEncode(path)}";
