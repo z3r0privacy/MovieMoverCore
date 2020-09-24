@@ -287,13 +287,17 @@ namespace MovieMoverCore.Services
 
         public FileMoveOperation CreateSeriesMoveOperation(string downloadName, Series series, int? season)
         {
+            if (!IsDownloadNameLegal(downloadName, out var source))
+            {
+                throw new ArgumentException("Illegal download name provided. File or Folder could not be found");
+            }
             var dest = Path.Combine(_settings.Files_SeriesPath, series.DirectoryName);
             if (season.HasValue)
             {
                 dest = Path.Combine(dest, "S" + season.Value.ToString("00"));
             }
-            return _fileMoveWorker.QueueMoveOperation(downloadName, Path.Combine(_settings.Files_DownloadsPath, downloadName),
-                dest, PlexSection.Series);
+            return _fileMoveWorker.QueueMoveOperation(downloadName, source,
+                Path.Combine(dest, downloadName), PlexSection.Series);
         }
 
         public List<string> GetDownloadEntries()

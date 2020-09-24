@@ -46,7 +46,7 @@ namespace MovieMoverCore.Pages
         public IActionResult OnGetDownloadsAsync()
         {
             var sb = new StringBuilder();
-            foreach (var f in _fileMover.GetDownloadEntries())
+            foreach (var f in _fileMover.GetDownloadEntries().OrderBy(f => f))
             {
                 var name = Path.GetFileName(f);
                 sb.AppendLine(string.Format(_cardTemplate, name));
@@ -56,7 +56,7 @@ namespace MovieMoverCore.Pages
 
         public IActionResult OnGetSeries()
         {
-            var data = _database.GetSeries(s => !s.IsFinished).Select(s => new
+            var data = _database.GetSeries(s => !s.IsFinished).OrderBy(s => s.Name).Select(s => new
             {
                 s.Id,
                 s.Name
