@@ -20,3 +20,17 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "MovieMoverCore.dll"]
+
+VOLUME /appdata
+VOLUME /data
+ENV PLEX_BaseUrl
+ENV PLEX_MoviesSection
+ENV PLEX_SeriesSection
+ENV FILES_Downloads
+ENV FILES_Movies
+ENV FILES_Series
+ENV FILES_KeepSuccess=5
+ENV SUBS_SearchLink
+ENV EPGUIDE_SearchLink
+ENV DL_Series_SearchLink
+ENV JD_ApiPath=https://api.jdownloader.org
