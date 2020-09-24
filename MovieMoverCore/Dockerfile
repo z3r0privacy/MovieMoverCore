@@ -39,4 +39,4 @@ ENV JD_PreferredClient=
 # Secrets here
 ENV PLEX_ApiToken=
 ENV JD_Email=
-ENV JD_Password
+ENV JD_Password=
