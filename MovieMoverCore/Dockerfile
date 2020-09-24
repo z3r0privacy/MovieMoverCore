@@ -34,3 +34,9 @@ ENV SUBS_SearchLink=
 ENV EPGUIDE_SearchLink=
 ENV DL_Series_SearchLink=
 ENV JD_ApiPath=https://api.jdownloader.org
+ENV JD_PreferredClient=
+
+# Secrets here
+ENV PLEX_ApiToken=
+ENV JD_Email=
+ENV JD_Password
