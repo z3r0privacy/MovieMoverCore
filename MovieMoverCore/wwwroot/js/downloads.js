@@ -112,11 +112,20 @@ function getMoveOps() {
             if (data.length === 0) {
                 el.innerHTML = "<i>No pending move operations...</i>";
             } else {
-                var str = "<ul>";
+                var str = '<ul  class="list-group list - group - flush">';
                 for (var i = 0; i < data.length; i++) {
-                    str += "<li>" + data[i].Name + ": " + data[i].CurrentState;
-                    if (data[i].ErrorMessage !== "") {
+                    var clattr = "primary";
+                    if (data[i].CurrentState === "Success") {
+                        clattr = "success"
+                    } else if (data[i].CurrentState === "Failed") {
+                        clattr = "danger";
+                    }
+                    str += '<li id="fmo_' + data[i].ID + '" class="list-group-item list-group-item-' + clattr + ' d-flex justify-content-between align-items-center">' + data[i].Name + ": " + data[i].CurrentState;
+                    if (clattr === "danger") {
                         str += " (" + data[i].ErrorMessage + ")";
+                    }
+                    if (clattr !== "primary") {
+                        str += '<span class="badge badge-' + clattr + ' badge-pill linkCursor" onclick="dismissFMO(' + data[i].ID + ');">&times;</span>';
                     }
                     str += "</li>";
                 }
@@ -125,6 +134,22 @@ function getMoveOps() {
             }
             setTimeout(getMoveOps, 1000);
         });
+}
+
+function dismissFMO(id) {
+    $.ajax({
+        url: '/Downloads?handler=DismissFmo',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(id),
+        customId: id,
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    }).done(function (result) {
+        var li = document.getElementById("fmo_" + this.customId);
+        li.parentNode.removeChild(li);
+    });
 }
 
 getDownloadData();

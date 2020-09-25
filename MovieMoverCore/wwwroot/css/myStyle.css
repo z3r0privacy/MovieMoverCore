@@ -1,3 +1,7 @@
 ﻿.selectedCard {
     border: 1px solid blue;
 }
+
+.linkCursor {
+    cursor: pointer;
+}

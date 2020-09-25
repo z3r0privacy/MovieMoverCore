@@ -21,6 +21,7 @@ namespace MovieMoverCore.Services
         FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection);
         List<FileMoveOperation> QueryStates();
         FileMoveState QueryState(FileMoveOperation fmo);
+        bool DismissState(int id);
     }
 
     public interface IFileMover
@@ -55,6 +56,24 @@ namespace MovieMoverCore.Services
             _allOperationsRWLock = new ReaderWriterLockSlim();
             _moveTask = Task.Run(MoveWorker);
             _ID = 0;
+        }
+
+        public bool DismissState(int id)
+        {
+            _allOperationsRWLock.EnterWriteLock();
+            try
+            {
+                var el = _allOperations.FirstOrDefault(fmo => fmo.ID == id);
+                if (el == null || !el.Finished.HasValue)
+                {
+                    return false;
+                }
+                _allOperations.Remove(el);
+                return true;
+            } finally
+            {
+                _allOperationsRWLock.ExitWriteLock();
+            }
         }
 
         public List<FileMoveOperation> QueryStates()
@@ -151,6 +170,7 @@ namespace MovieMoverCore.Services
                     }
                     catch (Exception ex)
                     {
+                        _logger.LogWarning(ex, "Move operation failed");
                         moveOp.ErrorMessage = ex.Message;
                         moveOp.CurrentState = FileMoveState.Failed;
                     }

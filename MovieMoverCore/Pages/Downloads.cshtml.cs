@@ -49,14 +49,35 @@ namespace MovieMoverCore.Pages
         {
             var downloadStatesTask = _jDownloader.QueryDownloadStatesAsync();
             var sb = new StringBuilder();
-            foreach (var f in _fileMover.GetDownloadEntries().OrderBy(f => f))
+            var downloads = _fileMover.GetDownloadEntries().OrderBy(f => f);
+            if (downloads.Any())
             {
-                var name = Path.GetFileName(f);
+                foreach (var f in downloads)
+                {
+                    var name = Path.GetFileName(f);
 
-                var states = await downloadStatesTask;
-                var state = states.FirstOrDefault(p => Path.GetFileName(p.SaveTo) == name)?.PackageState.ToString() ?? "No info found";
+                    var stateData = (await downloadStatesTask).FirstOrDefault(p => Path.GetFileName(p.SaveTo) == name);
+                    string state;
+                    if (stateData == null)
+                    {
+                        state = "Unknown";
+                    } else
+                    {
+                        state = stateData.PackageState switch
+                        {
+                            JD_PackageState.Decrypt => "Decrypting...",
+                            JD_PackageState.Download => $"Downloading... {stateData.DownloadPercentage:0}%",
+                            JD_PackageState.Extract => "Extracting...",
+                            JD_PackageState.Wait => "Waiting to start...",
+                            _ => stateData.PackageState.ToString(),
+                        };
+                    }
 
-                sb.AppendLine(string.Format(_cardTemplate, name, state));
+                    sb.AppendLine(string.Format(_cardTemplate, name, state));
+                }
+            } else
+            {
+                sb.AppendLine("<i>No Downloads...");
             }
             return new JsonResult(JsonSerializer.Serialize(sb.ToString()));
         }
@@ -112,9 +133,19 @@ namespace MovieMoverCore.Pages
             {
                 s.Name,
                 CurrentState = s.CurrentState.ToString(),
-                s.ErrorMessage
+                s.ErrorMessage,
+                s.ID
             });
             return new JsonResult(JsonSerializer.Serialize(states));
+        }
+
+        public IActionResult OnPostDismissFmo([FromBody] int id)
+        {
+            if (ModelState.IsValid && _fileMoveWorker.DismissState(id))
+            {
+                return new OkResult();
+            }
+            return new NotFoundResult();
         }
     }
 }
