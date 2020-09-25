@@ -110,7 +110,7 @@ namespace MovieMoverCore.Services
 
             EpGuide_SearchLink = Environment.GetEnvironmentVariable("EPGUIDE_SearchLink");
 
-            DL_Series_SearchLink = Environment.GetEnvironmentVariable("DL_series_SearchLink");
+            DL_Series_SearchLink = Environment.GetEnvironmentVariable("DL_Series_SearchLink");
 
             JD_ApiPath = Environment.GetEnvironmentVariable("JD_ApiPath");
             JD_Email = Environment.GetEnvironmentVariable("JD_Email");
