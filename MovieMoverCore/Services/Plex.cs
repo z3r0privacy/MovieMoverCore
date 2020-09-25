@@ -78,11 +78,16 @@ namespace MovieMoverCore.Services
             var xml = new XmlDocument();
             xml.LoadXml(epsData);
             var ep = xml.DocumentElement.ChildNodes.Cast<XmlNode>().Last();
-            var rawdate = ep.Attributes["originallyAvailableAt"].InnerText.Split("-");
+            var released = ep.Attributes["originallyAvailableAt"];
+            string[] rawdate = null;
+            if (released != null)
+            {
+                rawdate = released.InnerText.Split("-");
+            }
             
             return new EpisodeInfo
             {
-                AirDate = new DateTime(int.Parse(rawdate[0]), int.Parse(rawdate[1]), int.Parse(rawdate[2])),
+                AirDate = (rawdate != null) ? new DateTime(int.Parse(rawdate[0]), int.Parse(rawdate[1]), int.Parse(rawdate[2])) : DateTime.MinValue,
                 Episode = int.Parse(ep.Attributes["index"].InnerText),
                 Season = int.Parse(ep.Attributes["parentIndex"].InnerText),
                 Series = series,

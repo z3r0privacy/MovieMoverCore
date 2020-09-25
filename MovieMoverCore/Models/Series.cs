@@ -40,7 +40,8 @@ namespace MovieMoverCore.Models
                 Name = Name,
                 PlexId = PlexId,
                 SearchNewEpisodes = SearchNewEpisodes,
-                SubtitlesName = SubtitlesName
+                SubtitlesName = SubtitlesName,
+                VideoSearch = VideoSearch
             };
         }
 
@@ -53,6 +54,7 @@ namespace MovieMoverCore.Models
             PlexId = series.PlexId;
             SearchNewEpisodes = series.SearchNewEpisodes;
             SubtitlesName = series.SubtitlesName;
+            VideoSearch = series.VideoSearch;
         }
 
         object ICloneable.Clone()
