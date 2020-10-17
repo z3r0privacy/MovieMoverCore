@@ -158,13 +158,13 @@ namespace MovieMoverCore.Services
         {
             if (!IsReady())
             {
-                _logger.LogWarning($"Could not get ready. Current state: {_currentState}");
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_currentState}");
                 return new List<JD_FilePackage>();
             }
             var (state, list) = await Device_QueryDownloadPackagesAsync();
             if (state != JDState.Ready)
             {
-                _logger.LogWarning($"Could not query download packages. State: {state}");
+                _logger.LogWarning(_lastException, $"Could not query download packages. State: {state}");
                 return new List<JD_FilePackage>();
             }
             return list;
