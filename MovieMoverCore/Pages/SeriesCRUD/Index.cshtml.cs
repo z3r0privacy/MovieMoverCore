@@ -24,7 +24,7 @@ namespace MovieMoverCore.Pages.SeriesCRUD
 
         public void OnGet()
         {
-            Series = _db.GetSeries(); //await _context.Series.ToListAsync();
+            Series = _db.GetSeries().OrderBy(s => s.Name).ToList(); //await _context.Series.ToListAsync();
         }
     }
 }

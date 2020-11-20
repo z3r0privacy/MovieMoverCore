@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>36351a23-4245-43b6-a25d-25a54d51bb65</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-v "$(SolutionDir)\MovieMoverCore\DockerVolumes\secrets:/secrets:ro" -v "$(SolutionDir)\MovieMoverCore\DockerVolumes\AppData:/appdata" -v "$(SolutionDir)\MovieMoverCore\DockerVolumes\data:/data" -e "PLEX_BaseUrl=https://172.16.100.21:32400/" -e "PLEX_MoviesSection=1" -e "PLEX_SeriesSection=2" -e "FILES_Downloads=downloads" -e"FILES_Movies=movies" -e "FILES_Series=series" -e "FILES_KeepSuccess=5" -e "SUBS_SearchLink=https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search" -e "EPGUIDE_SearchLink=http://epguides.com/{0}/" -e "DL_series_SearchLink=https://snahp.it/?s={0}%20s{1}e{2}" -e "JD_ApiPath=https://api.jdownloader.org"</DockerfileRunArguments>
+    <DockerfileRunArguments>-v "$(SolutionDir)\MovieMoverCore\DockerVolumes\secrets:/secrets:ro" -v "$(SolutionDir)\MovieMoverCore\DockerVolumes\AppData:/appdata" -v "$(SolutionDir)\MovieMoverCore\DockerVolumes\data:/data" -e "PLEX_BaseUrl=https://172.16.100.21:32400/" -e "PLEX_MoviesSection=1" -e "PLEX_SeriesSection=2" -e "FILES_Downloads=downloads" -e"FILES_Movies=movies" -e "FILES_Series=series" -e "FILES_KeepSuccess=5" -e "SUBS_SearchLink=https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search" -e "EPGUIDE_SearchLink=http://epguides.com/{0}/" -e "DL_Series_SearchLink=https://snahp.it/?s={0}%20s{1}e{2}" -e "JD_ApiPath=https://api.jdownloader.org"</DockerfileRunArguments>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">

@@ -264,6 +264,7 @@ namespace MovieMoverCore.Models
                 if (lowState.StartsWith("running")) return JD_PackageState.Download;
                 if (lowState.StartsWith("invalid")) return JD_PackageState.Error;
                 if (lowState.StartsWith("an error")) return JD_PackageState.Error;
+                if (lowState.StartsWith("connection problem")) return JD_PackageState.Error;
 
                 return JD_PackageState.Unknown;
             }

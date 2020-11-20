@@ -23,13 +23,16 @@ namespace MovieMoverCore.Pages
 
         private string _cardTemplate = @"
 <div class=""col-md-4 my-2"">
-                <div class=""card"" style=""width: 18rem;"" id=""{0}"" onclick=""toggleSelection('{0}');"">
-                    <div class=""card-body"">
-                        <h6 class=""card-subtitle mb-2 text-muted"">{0}</h6>
-                        <i>State: {1}</i>
-                    </div>
-                </div>
-            </div>
+    <div class=""card"" style=""width: 18rem;"" id=""{0}"" onclick=""toggleSelection('{0}');"">
+        <div class=""card-body"">
+            <h6 class=""card-subtitle mb-2 text-muted"">{0}</h6>
+            <i>State: {1}</i>
+        </div>
+        <div class=""progress mx-2 mb-2""  style=""height: 4px;"">
+            <div class=""progress-bar {3}"" role=""progressbar"" style=""width: {2}%"" aria-valuenow=""25"" aria-valuemin=""0"" aria-valuemax=""100""></div>
+        </div>
+    </div>
+</div>
 ";
 
         public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker, IJDownloader jDownloader)
@@ -58,9 +61,11 @@ namespace MovieMoverCore.Pages
 
                     var stateData = (await downloadStatesTask).FirstOrDefault(p => Path.GetFileName(p.SaveTo) == name);
                     string state;
+                    string bgprogress;
                     if (stateData == null)
                     {
                         state = "Unknown";
+                        bgprogress = "bg-danger";
                     } else
                     {
                         state = stateData.PackageState switch
@@ -71,9 +76,17 @@ namespace MovieMoverCore.Pages
                             JD_PackageState.Wait => "Waiting to start...",
                             _ => stateData.PackageState.ToString(),
                         };
+                        bgprogress = stateData.PackageState switch
+                        {
+                            JD_PackageState.Download => "bg-info",
+                            JD_PackageState.Decrypt => "bg-warning",
+                            JD_PackageState.Extract => "bg-warning",
+                            JD_PackageState.Finished => "bg-success",
+                            _ => "bg-danger",
+                        };
                     }
 
-                    sb.AppendLine(string.Format(_cardTemplate, name, state));
+                    sb.AppendLine(string.Format(_cardTemplate, name, state, stateData?.DownloadPercentage ?? 0, bgprogress));
                 }
             } else
             {
