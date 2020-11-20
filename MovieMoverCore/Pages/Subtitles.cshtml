@@ -1,0 +1,24 @@
+﻿@page
+@model MovieMoverCore.Pages.SubtitlesModel
+@{
+    ViewData["Title"] = "Downloads";
+}
+
+<h1>Add Subtitles</h1>
+
+<div class="container">
+    <div class="row">
+        @{
+            foreach (var s in Model.Series)
+            {
+                <div class="col-md-4 my-2">
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">@s.Name</h6>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
