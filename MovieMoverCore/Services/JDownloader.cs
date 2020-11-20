@@ -56,7 +56,12 @@ namespace MovieMoverCore.Services
         private int RID => Interlocked.Increment(ref _rid);
 
         private Exception _lastException;
-        private JDState _currentState;
+        private JDState _CurrentState
+        {
+            get => _currentState;
+            set => _currentState = value;
+        }
+        private volatile JDState _currentState;
         
         public JDownloader(ISettings settings, ILogger<JDownloader> logger)
         {
@@ -64,7 +69,7 @@ namespace MovieMoverCore.Services
             _logger = logger;
             _sha256Alg = SHA256.Create();
             _appKey = "MovieMover";
-            _currentState = JDState.NotStarted;
+            _CurrentState = JDState.NotStarted;
         }
 
         public void Test()
@@ -146,9 +151,9 @@ namespace MovieMoverCore.Services
 
                 do
                 {
-                    lastState = _currentState;
-                    res = TryRepairState();
-                } while (!res && lastState != _currentState);
+                    lastState = _CurrentState;
+                    res = TryRepairStateAsync().Result;
+                } while (!res && lastState != _CurrentState);
 
                 return res;
             }
@@ -158,10 +163,11 @@ namespace MovieMoverCore.Services
         {
             if (!IsReady())
             {
-                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_currentState}");
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
                 return new List<JD_FilePackage>();
             }
             var (state, list) = await Device_QueryDownloadPackagesAsync();
+            _CurrentState = state;
             if (state != JDState.Ready)
             {
                 _logger.LogWarning(_lastException, $"Could not query download packages. State: {state}");
@@ -174,9 +180,9 @@ namespace MovieMoverCore.Services
 
         // Here, error handling and state handling is provided
         #region error and state handling
-        private bool TryRepairState()
+        private async Task<bool> TryRepairStateAsync()
         {
-            switch (_currentState)
+            switch (_CurrentState)
             {
                 case JDState.Ready:
                     return true;
@@ -184,13 +190,23 @@ namespace MovieMoverCore.Services
                 case JDState.TimedOut:
                     return true;
                 case JDState.Error:
-                    _logger.LogWarning(_lastException, "Cannot recover from error.");
+                    if (_lastException is JDException jde)
+                    {
+                        _logger.LogInformation(_lastException, "Trying to recover from JD_Error");
+                        if (jde.JDError.Type.Equals("TOKEN_INVALID", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            _CurrentState = await Server_LoginAsync();
+                            _logger.LogDebug(jde, $"Recovering from jd_error resulted in {_CurrentState}");
+                            return false;
+                        }
+                    }
+                    _logger.LogWarning(_lastException, "Cannot recover from exception.");
                     return false;
                 case JDState.NoDevice:
                     var (state, devices) = Server_ListDevicesAsync().Result;
                     if (state != JDState.Ready)
                     {
-                        _currentState = state;
+                        _CurrentState = state;
                         return false;
                     }
                     if (devices.Count == 0)
@@ -203,15 +219,15 @@ namespace MovieMoverCore.Services
                         if (sel != null)
                         {
                             _selectedDeviceId = sel.Id;
-                            _currentState = JDState.Ready;
+                            _CurrentState = JDState.Ready;
                             return true;
                         }
                     }
                     _selectedDeviceId = devices[0].Id;
-                    _currentState = JDState.Ready;
+                    _CurrentState = JDState.Ready;
                     return true;
                 case JDState.NotStarted:
-                    _currentState = Server_LoginAsync().Result;
+                    _CurrentState = await Server_LoginAsync();
                     return false;
                 case JDState.Overload:
                     _logger.LogWarning("Cannot recover from overload");
@@ -321,21 +337,26 @@ namespace MovieMoverCore.Services
             }
 
             var encBody = await response.Content.ReadAsStringAsync();
-            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            string responseString;
+            try
             {
-                // these errors are unencrypted
-                var err = JsonSerializer.Deserialize<JD_Error>(encBody);
-                throw new JDException(err);
+                responseString = Decrypt(Convert.FromBase64String(encBody), decKey);
             }
-            var rawString = Decrypt(Convert.FromBase64String(encBody), decKey);
-            var opt = new JsonSerializerOptions();
+            catch (FormatException)
+            {
+                // response not in base64 format
+                responseString = encBody;
+            }
+
+            //var opt = new JsonSerializerOptions();
             //opt.Converters.Add(new JsonConverterNullableJDPriority());
             if (!response.IsSuccessStatusCode)
             {
-                var err = JsonSerializer.Deserialize<JD_Error>(rawString);
+                var err = JsonSerializer.Deserialize<JD_Error>(responseString);
                 throw new JDException(err);
             }
-            return JsonSerializer.Deserialize<T>(rawString, opt);
+
+            return JsonSerializer.Deserialize<T>(responseString);
         }
         #endregion
 
@@ -488,6 +509,8 @@ namespace MovieMoverCore.Services
                 var param = new JD_QueryDevices_Request_Params();
 
                 var response = await CallDeviceAsync<List<JD_FilePackage>>("/downloadsV2/queryPackages", param);
+
+                _logger.LogDebug(response.Select(fp => $"{fp.Name}: state:'{fp.Status}'").Aggregate((s1, s2) => s1 + ", " + s2));
 
                 return (JDState.Ready, response);
             } catch (Exception ex)
