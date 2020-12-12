@@ -52,6 +52,8 @@ namespace MovieMoverCore.Services
         private string _selectedDeviceId;
         private string _appKey;
 
+        private DateTime? _timeOut = null;
+
         private int _rid = 0;
         private int RID => Interlocked.Increment(ref _rid);
 
@@ -149,6 +151,15 @@ namespace MovieMoverCore.Services
                 JDState lastState;
                 bool res;
 
+                if (_timeOut.HasValue)
+                {
+                    if (DateTime.Now < _timeOut.Value)
+                    {
+                        return false;
+                    }
+                    _timeOut = null;
+                }
+
                 do
                 {
                     lastState = _CurrentState;
@@ -196,11 +207,14 @@ namespace MovieMoverCore.Services
                         if (jde.JDError.Type.Equals("TOKEN_INVALID", StringComparison.CurrentCultureIgnoreCase))
                         {
                             _CurrentState = await Server_LoginAsync();
-                            _logger.LogDebug(jde, $"Recovering from jd_error resulted in {_CurrentState}");
+                            _logger.LogInformation(jde, $"Recovering from jd_error resulted in {_CurrentState}");
                             return false;
                         }
                     }
                     _logger.LogWarning(_lastException, "Cannot recover from exception.");
+
+                    _timeOut = DateTime.Now.AddMinutes(5);
+
                     return false;
                 case JDState.NoDevice:
                     var (state, devices) = Server_ListDevicesAsync().Result;
