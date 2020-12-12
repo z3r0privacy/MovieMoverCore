@@ -100,7 +100,8 @@ namespace MovieMoverCore.Pages
             var data = _database.GetSeries(s => !s.IsFinished).OrderBy(s => s.Name).Select(s => new
             {
                 s.Id,
-                s.Name
+                s.Name,
+                s.LastSelectedSeason
             });
             return new JsonResult(JsonSerializer.Serialize(data));
         }
@@ -124,6 +125,9 @@ namespace MovieMoverCore.Pages
                 var s = _fileMover.CreateSeriesMoveOperation(dl, series, moveToSeries.Season);
                 states.Add(s);
             }
+
+            series.LastSelectedSeason = moveToSeries.Season;
+            _database.UpdateSeries(series);
 
             return new OkResult();
         }

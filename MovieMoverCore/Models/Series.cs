@@ -28,6 +28,7 @@ namespace MovieMoverCore.Models
         public bool SearchNewEpisodes { get; set; }
         [DisplayName("Series Finished")]
         public bool IsFinished { get; set; }
+        public int LastSelectedSeason { get; set; } = 1;
 
         public Series Clone()
         {
@@ -41,7 +42,8 @@ namespace MovieMoverCore.Models
                 PlexId = PlexId,
                 SearchNewEpisodes = SearchNewEpisodes,
                 SubtitlesName = SubtitlesName,
-                VideoSearch = VideoSearch
+                VideoSearch = VideoSearch,
+                LastSelectedSeason = LastSelectedSeason
             };
         }
 
@@ -55,6 +57,7 @@ namespace MovieMoverCore.Models
             SearchNewEpisodes = series.SearchNewEpisodes;
             SubtitlesName = series.SubtitlesName;
             VideoSearch = series.VideoSearch;
+            LastSelectedSeason = series.LastSelectedSeason;
         }
 
         object ICloneable.Clone()

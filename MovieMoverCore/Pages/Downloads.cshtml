@@ -49,10 +49,11 @@
                 </button>
             </div>
             <div class="modal-body">
+                <h4 id="seriesMoverName"></h4>
                 <form>
                     <div class="form-group">
                         <label for="seriesSelector">Series</label>
-                        <select class="form-control" id="seriesSelector"></select>
+                        <select class="form-control" id="seriesSelector" onchange="updateSelectedSeason()"></select>
                     </div>
                     <div class="form-group">
                         <label for="season">Season</label>
