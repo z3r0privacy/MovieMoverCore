@@ -13,8 +13,16 @@
             {
                 <div class="col-md-4 my-2">
                     <div class="card" style="width: 18rem;">
+                        <div class="card-header">
+                            @s.Name
+                        </div>
                         <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">@s.Name</h6>
+                            @*<h6 class="card-subtitle mb-2 text-muted">@s.Name</h6>*@
+                            <form enctype="multipart/form-data" onsubmit="AJAXSubmit(this);return false;" method="post">
+                                <input type="file" multiple>
+                                <input type="hidden" name="series" value="@s.Id" />
+                                <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -22,3 +30,26 @@
         }
     </div>
 </div>
+
+<script>
+    async function AJAXSubmit(oFormElement) {
+        const formData = new FormData(oFormElement);
+
+        try {
+            const response = await fetch(oFormElement.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            }
+
+            result = 'Result: ' + response.status + ' ' +
+                response.statusText;
+            alert(result);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>
