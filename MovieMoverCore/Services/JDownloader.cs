@@ -524,7 +524,7 @@ namespace MovieMoverCore.Services
 
                 var response = await CallDeviceAsync<List<JD_FilePackage>>("/downloadsV2/queryPackages", param);
 
-                _logger.LogDebug(response.Select(fp => $"{fp.Name}: state:'{fp.Status}'").Aggregate((s1, s2) => s1 + ", " + s2));
+                _logger.LogDebug(response.Count == 0 ? "No Packages returned" : response.Select(fp => $"{fp.Name}: state:'{fp.Status}'").Aggregate((s1, s2) => s1 + ", " + s2));
 
                 return (JDState.Ready, response);
             } catch (Exception ex)
