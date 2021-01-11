@@ -184,6 +184,24 @@ namespace MovieMoverCore.Services
                 _logger.LogWarning(_lastException, $"Could not query download packages. State: {state}");
                 return new List<JD_FilePackage>();
             }
+            //foreach (var p in pkgs.Item2) //.Where(pk => pk.PackageState == JD_PackageState.Finished))
+            //{
+            //    List<JD_ArchiveStatus> archiveStatus;
+            //    (state, archiveStatus) = Device_GetArchiveInfoAsync(p).Result;
+            //    if (archiveStatus.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
+            //    {
+            //        p.IsExtracting = true;
+            //    }
+            //}
+            list.AsParallel().ForAll(async p =>
+            {
+                List<JD_ArchiveStatus> archState;
+                (state, archState) = await Device_GetArchiveInfoAsync(p);
+                if (archState.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
+                {
+                    p.IsExtracting = true;
+                }
+            });
             return list;
         }
         #endregion
