@@ -155,9 +155,12 @@ namespace MovieMoverCore.Services
                 {
                     if (DateTime.Now < _timeOut.Value)
                     {
+                        _lastException = new RecoveryTimeOutNotFinishedException(_timeOut.Value,
+                            _lastException is RecoveryTimeOutNotFinishedException rtonf ? rtonf.OriginalException : _lastException);
                         return false;
                     }
                     _timeOut = null;
+                    _CurrentState = JDState.TimedOut;
                 }
 
                 do
