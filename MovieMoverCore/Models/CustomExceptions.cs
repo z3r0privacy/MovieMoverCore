@@ -27,7 +27,7 @@ namespace MovieMoverCore.Models
         public Exception OriginalException { get; set; }
 
         public RecoveryTimeOutNotFinishedException(DateTime endTime, Exception originalException)
-            : base($"Currently timed out for recovery. Ends in {(endTime-DateTime.Now):mm:ss} mins. Original exception was {originalException.Message}")
+            : base($"Currently timed out for recovery. Ends in {(endTime-DateTime.Now):mm\\:ss} mins. Original exception was {originalException?.Message ?? "none"}")
         {
             RecoveryTimeOutEnding = endTime;
             OriginalException = originalException;
