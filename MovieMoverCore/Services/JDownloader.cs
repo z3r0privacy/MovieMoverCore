@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -359,6 +360,30 @@ namespace MovieMoverCore.Services
             return $"{_settings.JD_ApiPath}{query}{(hasOnlySigParam ? "?" : "&")}signature={sig}";
         }
 
+        private T DecryptResponse<T>(string encryptedData, byte[] decKey, bool successStatusCode)
+        {
+            string responseString;
+            try
+            {
+                responseString = Decrypt(Convert.FromBase64String(encryptedData), decKey);
+            }
+            catch (FormatException)
+            {
+                // response not in base64 format
+                responseString = encryptedData;
+            }
+
+            //var opt = new JsonSerializerOptions();
+            //opt.Converters.Add(new JsonConverterNullableJDPriority());
+            if (!successStatusCode)
+            {
+                var err = JsonSerializer.Deserialize<JD_Error>(responseString);
+                throw new JDException(err);
+            }
+
+            return JsonSerializer.Deserialize<T>(responseString);
+
+        }
         private async Task<T> DecryptResponseAsync<T>(Task<HttpResponseMessage> httpResponse, byte[] decKey, bool returnUnmodified = false)
         {
             var response = await httpResponse;
@@ -372,26 +397,7 @@ namespace MovieMoverCore.Services
             }
 
             var encBody = await response.Content.ReadAsStringAsync();
-            string responseString;
-            try
-            {
-                responseString = Decrypt(Convert.FromBase64String(encBody), decKey);
-            }
-            catch (FormatException)
-            {
-                // response not in base64 format
-                responseString = encBody;
-            }
-
-            //var opt = new JsonSerializerOptions();
-            //opt.Converters.Add(new JsonConverterNullableJDPriority());
-            if (!response.IsSuccessStatusCode)
-            {
-                var err = JsonSerializer.Deserialize<JD_Error>(responseString);
-                throw new JDException(err);
-            }
-
-            return JsonSerializer.Deserialize<T>(responseString);
+            return DecryptResponse<T>(encBody, decKey, response.IsSuccessStatusCode);
         }
         #endregion
 
@@ -531,14 +537,31 @@ namespace MovieMoverCore.Services
             try
             {
                 var cnt = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
-                var postTask = new HttpClient().PostAsync(query, cnt);
-                var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
-                if (response.Rid != postData.Rid)
+                var wr = (HttpWebRequest)WebRequest.Create(query);
+                wr.Method = "POST";
+                using (var bodywriter = new StreamWriter(await wr.GetRequestStreamAsync()))
                 {
-                    throw new InvalidDataException("The rid is not the expected one.");
+                    bodywriter.Write(bodyEnc);
                 }
-                return response.Data;
-            } catch (HttpRequestException hre)
+                _logger.LogInformation($"{DateTime.Now:R} Calling JD API");
+                using (var webresponse = (HttpWebResponse)wr.GetResponse())
+                {
+                    string webBody;
+                    using var bodyreader = new StreamReader(webresponse.GetResponseStream());
+                    webBody = bodyreader.ReadToEnd();
+
+                    var response = DecryptResponse<JD_Response<T>>(webBody, _deviceEncryptionToken, (int)webresponse.StatusCode >= 200 && (int)webresponse.StatusCode < 400);
+                    if (response.Rid != postData.Rid)
+                    {
+                        throw new InvalidDataException("The rid is not the expected one.");
+                    }
+                    return response.Data;
+                }
+
+
+                //var postTask = new HttpClient().PostAsync(query, cnt);
+                //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
+            } catch (Exception hre)
             {
                 var sb = new StringBuilder();
                 sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
