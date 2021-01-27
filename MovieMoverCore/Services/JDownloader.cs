@@ -53,6 +53,8 @@ namespace MovieMoverCore.Services
         private string _selectedDeviceId;
         private string _appKey;
 
+        private string _apiBase;
+
         private DateTime? _timeOut = null;
 
         private int _rid = 0;
@@ -73,6 +75,7 @@ namespace MovieMoverCore.Services
             _sha256Alg = SHA256.Create();
             _appKey = "MovieMover";
             _CurrentState = JDState.NotStarted;
+            _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath : _settings.JD_My_ApiPath;
         }
 
         public void Test()
@@ -357,7 +360,7 @@ namespace MovieMoverCore.Services
         private string CreateQuery(string query, byte[] token, bool hasOnlySigParam = false)
         {
             var sig = CreateSignature(query, token);
-            return $"{_settings.JD_ApiPath}{query}{(hasOnlySigParam ? "?" : "&")}signature={sig}";
+            return $"{_apiBase}{query}{(hasOnlySigParam ? "?" : "&")}signature={sig}";
         }
 
         private T DecryptResponse<T>(string encryptedData, byte[] decKey, bool successStatusCode)
@@ -406,6 +409,10 @@ namespace MovieMoverCore.Services
         #region api calls
         private async Task<JDState> Server_LoginAsync()
         {
+            if (_settings.JD_Use_Direct)
+            {
+                return JDState.Ready;
+            }
             try
             {
                 var loginSecret = CalcLoginSecret(_settings.JD_Email.ToLower() + _settings.JD_Password + "server");
@@ -413,7 +420,7 @@ namespace MovieMoverCore.Services
                 var rid = RID;
                 var query = $"/my/connect?email={_settings.JD_Email.ToLower()}&appkey={_appKey}&rid={rid}";
                 var sig = CreateSignature(query, loginSecret);
-                query = _settings.JD_ApiPath + query + "&signature=" + sig;
+                query = _apiBase + query + "&signature=" + sig;
 
                 var response = await DecryptResponseAsync<JD_LoginResponse>(new HttpClient().PostAsync(query, null), loginSecret);
                 if (response.Rid != rid)
@@ -438,6 +445,10 @@ namespace MovieMoverCore.Services
 
         private async Task<JDState> Server_Reconnect()
         {
+            if (_settings.JD_Use_Direct)
+            {
+                return JDState.Ready;
+            }
             if (_sessionToken == null || _regainToken == null)
             {
                 _lastException = new InvalidOperationException("session and/or regaintoken not set, unable to reconnect");
@@ -472,6 +483,10 @@ namespace MovieMoverCore.Services
 
         private async Task<(JDState, List<JD_Device>)> Server_ListDevicesAsync()
         {
+            if (_settings.JD_Use_Direct)
+            {
+                return (JDState.Ready, null);
+            }
             try
             {
                 var rid = RID;
@@ -514,6 +529,107 @@ namespace MovieMoverCore.Services
 
         private async Task<T> CallDeviceAsync<T>(string action, params object[] queryParams) => await CallDeviceAsync<T>(action, returnUnmodified: false, queryParams);
         private async Task<T> CallDeviceAsync<T>(string action, bool returnUnmodified, params object[] queryParams)
+        {
+            string url;
+            StringContent content;
+            int rid = -1;
+            if (_settings.JD_Use_Direct)
+            {
+                (url, content) = PrepareCallDeviceDirect(action, queryParams);
+            }
+            else
+            {
+                (url, content, rid) = PrepareCallDeviceRemote(action, queryParams);
+            }
+
+            try
+            {
+                _logger.LogInformation($"{DateTime.Now:R} Calling JD API");
+                using (var httpClient = new HttpClient())
+                {
+                    var httpResponse = await httpClient.PostAsync(url, content);
+                    var rawString = await httpResponse.Content.ReadAsStringAsync();
+                    string responseString;
+                    if (_settings.JD_Use_Direct)
+                    {
+                        responseString = rawString;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            responseString = Decrypt(Convert.FromBase64String(rawString), _deviceEncryptionToken);
+                        }
+                        catch (FormatException)
+                        {
+                            // response not in base64 format
+                            responseString = rawString;
+                        }
+                    }
+
+                    if (!httpResponse.IsSuccessStatusCode)
+                    {
+                        var err = JsonSerializer.Deserialize<JD_Error>(responseString);
+                        throw new JDException(err);
+                    }
+
+                    var jdResponse = JsonSerializer.Deserialize<JD_Response<T>>(responseString);
+                    if (!_settings.JD_Use_Direct && rid != jdResponse.Rid)
+                    {
+                        throw new InvalidDataException("The rid is not the expected one.");
+                    }
+                    return jdResponse.Data;
+                }
+            }
+            catch (Exception hre)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Failed while executing action '{url}' with body '{content.ReadAsStringAsync().Result}'");
+                Exception ex = hre;
+                while (ex != null)
+                {
+                    sb.AppendLine(ex.ToString());
+                    ex = ex.InnerException;
+                }
+                _logger.LogError(sb.ToString());
+                throw hre;
+            }
+        }
+
+            //using (var webresponse = (HttpWebResponse)wr.GetResponse())
+            //{
+            //    string webBody;
+            //    using var bodyreader = new StreamReader(webresponse.GetResponseStream());
+            //    webBody = bodyreader.ReadToEnd();
+
+            //    var response = DecryptResponse<JD_Response<T>>(webBody, _deviceEncryptionToken, (int)webresponse.StatusCode >= 200 && (int)webresponse.StatusCode < 400);
+            //    if (response.Rid != postData.Rid)
+            //    {
+            //        throw new InvalidDataException("The rid is not the expected one.");
+            //    }
+            //    return response.Data;
+            //}
+
+
+            //var postTask = new HttpClient().PostAsync(query, cnt);
+            //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
+            //    }
+            //    catch (Exception hre)
+            //    {
+            //        var sb = new StringBuilder();
+            //        sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
+            //        Exception ex = hre;
+            //        while (ex != null)
+            //        {
+            //            sb.AppendLine(ex.ToString());
+            //            ex = ex.InnerException;
+            //        }
+            //        _logger.LogError(sb.ToString());
+            //        throw hre;
+            //    }
+            //}
+
+        private (string url, StringContent body) PrepareCallDeviceDirect(string action, params object[] queryParams)
         {
             var postData = new JD_Request
             {
@@ -561,7 +677,8 @@ namespace MovieMoverCore.Services
 
                 //var postTask = new HttpClient().PostAsync(query, cnt);
                 //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
-            } catch (Exception hre)
+            }
+            catch (Exception hre)
             {
                 var sb = new StringBuilder();
                 sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
@@ -574,6 +691,71 @@ namespace MovieMoverCore.Services
                 _logger.LogError(sb.ToString());
                 throw hre;
             }
+        }
+        private (string url, StringContent body, int rid) PrepareCallDeviceRemote(string action, params object[] queryParams)
+        {
+            var postData = new JD_Request
+            {
+                Rid = RID,
+                Url = action
+            };
+            postData.Params.AddRange(
+                queryParams.Select(o => JsonSerializer.Serialize(o, new JsonSerializerOptions() { IgnoreNullValues = true }))
+                );
+
+            var query = $"/t_{_sessionToken}_{_selectedDeviceId}{postData.Url}";
+            query = _apiBase + query; //CreateQuery(query, _deviceEncryptionToken, true);
+
+            var body = JsonSerializer.Serialize(postData, new JsonSerializerOptions
+            {
+                IgnoreNullValues = true
+            });
+            var bodyEnc = Encrypt(body, _deviceEncryptionToken);
+            var content = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
+
+            return (query, content, postData.Rid);
+
+            //try
+            //{
+            //    var cnt = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
+            //    var wr = (HttpWebRequest)WebRequest.Create(query);
+            //    wr.Method = "POST";
+            //    using (var bodywriter = new StreamWriter(await wr.GetRequestStreamAsync()))
+            //    {
+            //        bodywriter.Write(bodyEnc);
+            //    }
+            //    _logger.LogInformation($"{DateTime.Now:R} Calling JD API");
+            //    using (var webresponse = (HttpWebResponse)wr.GetResponse())
+            //    {
+            //        string webBody;
+            //        using var bodyreader = new StreamReader(webresponse.GetResponseStream());
+            //        webBody = bodyreader.ReadToEnd();
+
+            //        var response = DecryptResponse<JD_Response<T>>(webBody, _deviceEncryptionToken, (int)webresponse.StatusCode >= 200 && (int)webresponse.StatusCode < 400);
+            //        if (response.Rid != postData.Rid)
+            //        {
+            //            throw new InvalidDataException("The rid is not the expected one.");
+            //        }
+            //        return response.Data;
+            //    }
+
+
+            //    //var postTask = new HttpClient().PostAsync(query, cnt);
+            //    //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
+            //}
+            //catch (Exception hre)
+            //{
+            //    var sb = new StringBuilder();
+            //    sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
+            //    Exception ex = hre;
+            //    while (ex != null)
+            //    {
+            //        sb.AppendLine(ex.ToString());
+            //        ex = ex.InnerException;
+            //    }
+            //    _logger.LogError(sb.ToString());
+            //    throw hre;
+            //}
         }
 
         private async Task<(JDState, List<JD_FilePackage>)> Device_QueryDownloadPackagesAsync()

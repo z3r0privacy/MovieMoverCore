@@ -30,6 +30,8 @@ namespace MovieMoverCore.Services
         public string JD_Email { get; }
         public string JD_Password { get;}
         public string JD_ApiPath { get; }
+        public string JD_My_ApiPath { get; set; }
+        public bool JD_Use_Direct { get; set; }
         public string JD_PreferredClient { get; }
 
         void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack);
@@ -65,6 +67,8 @@ namespace MovieMoverCore.Services
         public string JD_Password { get; private set; }
         public string JD_ApiPath { get; private set; }
         public string JD_PreferredClient { get; private set; }
+        public string JD_My_ApiPath { get; set; }
+        public bool JD_Use_Direct { get; set; }
 
         private List<RemoteCertificateValidationCallback> _customValidators;
 
@@ -113,6 +117,8 @@ namespace MovieMoverCore.Services
             DL_Series_SearchLink = Environment.GetEnvironmentVariable("DL_Series_SearchLink");
 
             JD_ApiPath = Environment.GetEnvironmentVariable("JD_ApiPath");
+            JD_My_ApiPath = Environment.GetEnvironmentVariable("JD_My_ApiPath");
+            JD_Use_Direct = string.Equals(Environment.GetEnvironmentVariable("JD_Method"), "direct", StringComparison.OrdinalIgnoreCase);
             JD_Email = Environment.GetEnvironmentVariable("JD_Email");
             JD_Password = Environment.GetEnvironmentVariable("JD_Password");
             JD_PreferredClient = Environment.GetEnvironmentVariable("JD_PreferredClient");
