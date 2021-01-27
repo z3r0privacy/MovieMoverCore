@@ -528,13 +528,29 @@ namespace MovieMoverCore.Services
             var bodyEnc = Encrypt(body, _deviceEncryptionToken);
 
 
-            var cnt = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
-            var response = await DecryptResponseAsync<JD_Response<T>>(new HttpClient().PostAsync(query, cnt), _deviceEncryptionToken, returnUnmodified);
-            if (response.Rid != postData.Rid)
+            try
             {
-                throw new InvalidDataException("The rid is not the expected one.");
+                var cnt = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
+                var postTask = new HttpClient().PostAsync(query, cnt);
+                var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
+                if (response.Rid != postData.Rid)
+                {
+                    throw new InvalidDataException("The rid is not the expected one.");
+                }
+                return response.Data;
+            } catch (HttpRequestException hre)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
+                Exception ex = hre;
+                while (ex != null)
+                {
+                    sb.AppendLine(ex.ToString());
+                    ex = ex.InnerException;
+                }
+                _logger.LogError(sb.ToString());
+                throw hre;
             }
-            return response.Data;
         }
 
         private async Task<(JDState, List<JD_FilePackage>)> Device_QueryDownloadPackagesAsync()
