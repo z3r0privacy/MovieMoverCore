@@ -128,12 +128,15 @@ namespace MovieMoverCore.Services
                 JD_Email = File.ReadAllText("/secrets/jd_email.txt");
                 _logger.LogDebug("Reading JD email from secrets folder");
             }
-#endif
-#if DEBUG
             if (JD_Password == null && File.Exists("/secrets/jd_password.txt"))
             {
                 JD_Password = File.ReadAllText("/secrets/jd_password.txt");
                 _logger.LogDebug("Reading JD pwd from secrets folder");
+            }
+            if (JD_ApiPath == null && File.Exists("/secrets/jd_localpath.txt"))
+            {
+                JD_ApiPath = File.ReadAllText("/secrets/jd_localpath.txt");
+                _logger.LogDebug("Reading JD local Api Path from secrets folder");
             }
 #endif
 

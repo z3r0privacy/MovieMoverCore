@@ -34,7 +34,11 @@ namespace MovieMoverCore.Services
     {
         void Test();
 
+        List<JD_FilePackage> LastDownloadStates { get; }
+        
         Task<List<JD_FilePackage>> QueryDownloadStatesAsync();
+        Task<bool> RemoveDownloadPackageAsync(long uuid);
+        Task<bool> RemoveDownloadPackage(string downloadPath);
     }
 
     public class JDownloader : IJDownloader
@@ -67,7 +71,9 @@ namespace MovieMoverCore.Services
             set => _currentState = value;
         }
         private volatile JDState _currentState;
-        
+
+        public List<JD_FilePackage> LastDownloadStates { get; private set; }
+
         public JDownloader(ISettings settings, ILogger<JDownloader> logger)
         {
             _settings = settings;
@@ -75,7 +81,8 @@ namespace MovieMoverCore.Services
             _sha256Alg = SHA256.Create();
             _appKey = "MovieMover";
             _CurrentState = JDState.NotStarted;
-            _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath : _settings.JD_My_ApiPath;
+            LastDownloadStates = new List<JD_FilePackage>();
+            _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath + "/jd" : _settings.JD_My_ApiPath;
         }
 
         public void Test()
@@ -209,7 +216,39 @@ namespace MovieMoverCore.Services
                     p.IsExtracting = true;
                 }
             });
+
+            LastDownloadStates.Clear();
+            LastDownloadStates.AddRange(list);
+
             return list;
+        }
+
+        public async Task<bool> RemoveDownloadPackageAsync(long uuid)
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+
+            var (state, result) = await Device_RemoveLinks(uuid);
+
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not remove download packages. State: {state}");
+            }
+
+            return result;
+        }
+
+        public async Task<bool> RemoveDownloadPackage(string downloadPath)
+        {
+            var package = LastDownloadStates.FirstOrDefault(pkg => pkg.SaveTo == downloadPath);
+            if (package != null)
+            {
+                return await RemoveDownloadPackageAsync(package.UUID);
+            }
+            return false;
         }
         #endregion
 
@@ -596,101 +635,26 @@ namespace MovieMoverCore.Services
             }
         }
 
-            //using (var webresponse = (HttpWebResponse)wr.GetResponse())
-            //{
-            //    string webBody;
-            //    using var bodyreader = new StreamReader(webresponse.GetResponseStream());
-            //    webBody = bodyreader.ReadToEnd();
-
-            //    var response = DecryptResponse<JD_Response<T>>(webBody, _deviceEncryptionToken, (int)webresponse.StatusCode >= 200 && (int)webresponse.StatusCode < 400);
-            //    if (response.Rid != postData.Rid)
-            //    {
-            //        throw new InvalidDataException("The rid is not the expected one.");
-            //    }
-            //    return response.Data;
-            //}
-
-
-            //var postTask = new HttpClient().PostAsync(query, cnt);
-            //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
-            //    }
-            //    catch (Exception hre)
-            //    {
-            //        var sb = new StringBuilder();
-            //        sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
-            //        Exception ex = hre;
-            //        while (ex != null)
-            //        {
-            //            sb.AppendLine(ex.ToString());
-            //            ex = ex.InnerException;
-            //        }
-            //        _logger.LogError(sb.ToString());
-            //        throw hre;
-            //    }
-            //}
-
         private (string url, StringContent body) PrepareCallDeviceDirect(string action, params object[] queryParams)
         {
-            var postData = new JD_Request
+            var requestParams = "";
+            if (queryParams != null && queryParams.Length != 0)
             {
-                Rid = RID,
-                Url = action
-            };
-            postData.Params.AddRange(
-                queryParams.Select(o => JsonSerializer.Serialize(o, new JsonSerializerOptions() { IgnoreNullValues = true }))
-                );
-
-            var query = $"/t_{_sessionToken}_{_selectedDeviceId}{postData.Url}";
-            query = _settings.JD_ApiPath + query; //CreateQuery(query, _deviceEncryptionToken, true);
-
-            var body = JsonSerializer.Serialize(postData, new JsonSerializerOptions
-            {
-                IgnoreNullValues = true
-            });
-            var bodyEnc = Encrypt(body, _deviceEncryptionToken);
-
-
-            try
-            {
-                var cnt = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
-                var wr = (HttpWebRequest)WebRequest.Create(query);
-                wr.Method = "POST";
-                using (var bodywriter = new StreamWriter(await wr.GetRequestStreamAsync()))
+                requestParams = queryParams.Select(p => JsonSerializer.Serialize(p, new JsonSerializerOptions
                 {
-                    bodywriter.Write(bodyEnc);
-                }
-                _logger.LogInformation($"{DateTime.Now:R} Calling JD API");
-                using (var webresponse = (HttpWebResponse)wr.GetResponse())
-                {
-                    string webBody;
-                    using var bodyreader = new StreamReader(webresponse.GetResponseStream());
-                    webBody = bodyreader.ReadToEnd();
-
-                    var response = DecryptResponse<JD_Response<T>>(webBody, _deviceEncryptionToken, (int)webresponse.StatusCode >= 200 && (int)webresponse.StatusCode < 400);
-                    if (response.Rid != postData.Rid)
-                    {
-                        throw new InvalidDataException("The rid is not the expected one.");
-                    }
-                    return response.Data;
-                }
-
-
-                //var postTask = new HttpClient().PostAsync(query, cnt);
-                //var response = await DecryptResponseAsync<JD_Response<T>>(postTask, _deviceEncryptionToken, returnUnmodified);
+                    IgnoreNullValues = true
+                })).Aggregate((s1, s2) => s1 + "&" + s2);
             }
-            catch (Exception hre)
+
+            var url = _apiBase + action;
+            if (!string.IsNullOrWhiteSpace(requestParams))
             {
-                var sb = new StringBuilder();
-                sb.AppendLine($"Failed while executing action '{action}' with body '{body}'");
-                Exception ex = hre;
-                while (ex != null)
-                {
-                    sb.AppendLine(ex.ToString());
-                    ex = ex.InnerException;
-                }
-                _logger.LogError(sb.ToString());
-                throw hre;
+                url += "?" + requestParams;
             }
+
+            var body = new StringContent("");
+            
+            return (url, body);
         }
         private (string url, StringContent body, int rid) PrepareCallDeviceRemote(string action, params object[] queryParams)
         {
@@ -866,6 +830,19 @@ namespace MovieMoverCore.Services
             {
                 _lastException = ex;
                 return (JDState.Error, null);
+            }
+        }
+
+        private async Task<(JDState, bool)> Device_RemoveLinks(long uuid)
+        {
+            try
+            {
+                var resp = await CallDeviceAsync<string>("/downloadsV2/removeLinks", new long[] { }, new long[] { uuid });
+                return (JDState.Ready, true);
+            } catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false);
             }
         }
         #endregion
