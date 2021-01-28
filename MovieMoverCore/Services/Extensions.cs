@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -54,6 +55,11 @@ namespace MovieMoverCore.Services
         public static IServiceCollection UseJDownloader(this IServiceCollection services)
         {
             return services.AddSingleton<IJDownloader, JDownloader>();
+        }
+
+        public static void FireForget<T>(this Task task, ILogger<T> logger)
+        {
+            task.ContinueWith(t => logger.LogWarning(t.Exception, "Fire-And-Forget action failed"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 }

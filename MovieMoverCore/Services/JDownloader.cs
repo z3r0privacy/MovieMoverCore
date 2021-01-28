@@ -38,7 +38,7 @@ namespace MovieMoverCore.Services
         
         Task<List<JD_FilePackage>> QueryDownloadStatesAsync();
         Task<bool> RemoveDownloadPackageAsync(long uuid);
-        Task<bool> RemoveDownloadPackage(string downloadPath);
+        Task<bool> RemoveDownloadPackageAsync(string downloadPath);
     }
 
     public class JDownloader : IJDownloader
@@ -241,13 +241,14 @@ namespace MovieMoverCore.Services
             return result;
         }
 
-        public async Task<bool> RemoveDownloadPackage(string downloadPath)
+        public async Task<bool> RemoveDownloadPackageAsync(string downloadPath)
         {
-            var package = LastDownloadStates.FirstOrDefault(pkg => pkg.SaveTo == downloadPath);
+            var package = LastDownloadStates.FirstOrDefault(pkg => Path.GetFileName(pkg.SaveTo) == downloadPath);
             if (package != null)
             {
                 return await RemoveDownloadPackageAsync(package.UUID);
             }
+            _logger.LogInformation($"Could not resolve {downloadPath} to a UUID");
             return false;
         }
         #endregion
@@ -583,7 +584,7 @@ namespace MovieMoverCore.Services
 
             try
             {
-                _logger.LogInformation($"{DateTime.Now:R} Calling JD API");
+                _logger.LogDebug($"{DateTime.Now:R} Calling JD API");
                 using (var httpClient = new HttpClient())
                 {
                     var httpResponse = await httpClient.PostAsync(url, content);

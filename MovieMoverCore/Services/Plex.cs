@@ -19,7 +19,7 @@ namespace MovieMoverCore.Services
     public interface IPlex
     {
         Task<EpisodeInfo> GetNewestEpisodeAsync(Series series);
-        void RefreshSection(PlexSection section, string path = null);
+        Task RefreshSectionAsync(PlexSection section, string path = null);
         Task<List<(string id, string name)>> GetSeriesNamesAsync();
         Task<string> GetFilePathOfEpisode(Series series, int season, int episode);
         bool ResolvePlexId(Series series);
@@ -95,7 +95,7 @@ namespace MovieMoverCore.Services
             };
         }
 
-        public void RefreshSection(PlexSection section, string path = null)
+        public async Task RefreshSectionAsync(PlexSection section, string path = null)
         {
             string refreshId;
             if (section == PlexSection.Movies)
@@ -118,7 +118,7 @@ namespace MovieMoverCore.Services
             _logger.LogDebug("Refreshing a section using " + query, "***");
 
             var wc = new WebClient();
-            wc.DownloadString(string.Format(query, _settings.Plex_ApiToken));
+            await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
         }
 
         public async Task<List<(string id, string name)>> GetSeriesNamesAsync()

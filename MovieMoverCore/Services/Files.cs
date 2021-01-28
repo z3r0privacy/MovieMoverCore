@@ -42,13 +42,15 @@ namespace MovieMoverCore.Services
         private ReaderWriterLockSlim _allOperationsRWLock;
         private Task _moveTask;
         private IPlex _plex;
+        private IJDownloader _jDownloader;
         private ISettings _settings;
         private ILogger<FileMoveWorker> _logger;
         private uint _ID;
 
-        public FileMoveWorker(IPlex plex, ISettings settings, ILogger<FileMoveWorker> logger)
+        public FileMoveWorker(IPlex plex, IJDownloader jDownloader, ISettings settings, ILogger<FileMoveWorker> logger)
         {
             _plex = plex;
+            _jDownloader = jDownloader;
             _settings = settings;
             _logger = logger;
             _operationsPending = new BlockingCollection<FileMoveOperation>();
@@ -164,7 +166,11 @@ namespace MovieMoverCore.Services
                             throw new FileNotFoundException("Could not find the source file", moveOp.Source);
                         }
 
-                        _plex.RefreshSection(moveOp.PlexSection, moveOp.Destination);
+                        Task.Run(() =>
+                        {
+                            _plex.RefreshSectionAsync(moveOp.PlexSection, moveOp.Destination).FireForget(_logger);
+                            _jDownloader.RemoveDownloadPackageAsync(Path.GetFileName(moveOp.Source)).FireForget(_logger);
+                        });
 
                         moveOp.CurrentState = FileMoveState.Success;
                     }
