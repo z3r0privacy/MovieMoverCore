@@ -1,7 +1,11 @@
 ﻿@page
 @model MovieMoverCore.Pages.SubtitlesModel
 @{
-    ViewData["Title"] = "Downloads";
+    ViewData["Title"] = "Subtitles";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/dropzone.css" />
 }
 
 <h1>Add Subtitles</h1>
@@ -18,38 +22,87 @@
                         </div>
                         <div class="card-body">
                             @*<h6 class="card-subtitle mb-2 text-muted">@s.Name</h6>*@
-                            <form enctype="multipart/form-data" onsubmit="AJAXSubmit(this);return false;" method="post">
-                                <input type="file" multiple>
-                                <input type="hidden" name="series" value="@s.Id" />
-                                <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
+                            @*<form enctype="multipart/form-data" onsubmit="AJAXSubmit(this);return false;" method="post">
+            <input type="file" multiple>
+            <input type="hidden" name="series" value="@s.Id" />
+            <input asp-page-handler="Upload" class="btn" type="submit" value="Upload" />
+        </form>*@
+                            <form action="/Subtitles" class="dropzone"
+                                  id="dropzone@{s.Id.ToString();}">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="sid" value="@s.Id" />
                             </form>
-                        </div>
-                    </div>
-                </div>
+             </div>
+
+         </div>
+
+     </div>
             }
         }
     </div>
 </div>
 
-<script>
-    async function AJAXSubmit(oFormElement) {
-        const formData = new FormData(oFormElement);
 
-        try {
-            const response = await fetch(oFormElement.action, {
-                method: 'POST',
-                body: formData
-            });
 
-            if (response.ok) {
-                window.location.href = '/';
-            }
+@section Scripts {
+    <script type="text/javascript" src="~/js/dropzone.js"></script>
 
-            result = 'Result: ' + response.status + ' ' +
-                response.statusText;
-            alert(result);
-        } catch (error) {
-            console.error('Error:', error);
+    <script>
+        function myParamName() {
+            return "files";
         }
-    }
-</script>
+
+        Dropzone.options.dropzone = {
+            paramName: myParamName, // The name that will be used to transfer the file
+            maxFiles: 100,
+            maxFilesize: 1,
+            uploadMultiple: true,
+            previewTemplate: '<div><div class="dz-filename"><span data-dz-name></span></div><div class="dz-error-message"><span data-dz-errormessage></span></div></div>',
+            accept: function (file, done) {
+                if (file.name === "justinbieber.jpg") {
+                    done("Naha, you don't.");
+                }
+                else { done(); }
+            },
+            init: function () {
+                this.on("sending", function (file, response, formData) {
+                    formData["__RequestAntiForgeryToken"] = document.getElementsByName("__RequestVerificationToken").value;
+                });
+                this.on("sendingmultiple", function (file, response, formData) {
+                    formData["__RequestAntiForgeryToken"] = document.getElementsByName("__RequestVerificationToken").value;
+                });
+                this.on("success", function (file, response) {
+                    file.serverID = response.id;
+                });
+                this.on("error", function (file, response) {
+                    var r = response;
+                    console.log("Drop Err:");
+                    console.log(r);
+                });
+            }
+        };
+    </script>
+}
+
+@*<script>
+        async function AJAXSubmit(oFormElement) {
+            const formData = new FormData(oFormElement);
+
+            try {
+                const response = await fetch(oFormElement.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                }
+
+                result = 'Result: ' + response.status + ' ' +
+                    response.statusText;
+                alert(result);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>*@

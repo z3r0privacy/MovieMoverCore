@@ -5,3 +5,11 @@
 .linkCursor {
     cursor: pointer;
 }
+
+.dz-success {
+    color: darkgreen;
+}
+
+.dz-error {
+    color: red;
+}

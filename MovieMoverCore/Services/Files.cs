@@ -30,7 +30,7 @@ namespace MovieMoverCore.Services
         FileMoveOperation CreateSeriesMoveOperation(string downloadName, Series series, int? season);
         List<string> GetDownloadEntries();
         List<string> GetSeriesEntries();
-        Task<bool> AddSubtitle(string file, Series series);
+        Task<bool> AddSubtitleAsync(string fileName, byte[] content, Series series);
         bool ValidateSeriesPath(Series series, bool isNewEntry = false);
     }
 
@@ -268,10 +268,12 @@ namespace MovieMoverCore.Services
             return null;
         }
 
-        public async Task<bool> AddSubtitle(string file, Series series)
+        public async Task<bool> AddSubtitleAsync(string fileName, byte[] content, Series series)
         {
-            if (!GetEpisodeFromSrt(file, out var season, out var episode))
+
+            if (!GetEpisodeFromSrt(fileName, out var season, out var episode))
             {
+                // Todo: find better solution for returning errors
                 throw new ArgumentException("No season and episode information could be extracted from the given filename.");
             }
 
@@ -290,19 +292,16 @@ namespace MovieMoverCore.Services
                 throw new VideoDependencyNotFoundException(series, season, episode);
             }
 
-            var target = Path.GetFileNameWithoutExtension(videoPath) + ".srt";
+            var target = Path.Combine(Path.GetDirectoryName(videoPath), Path.GetFileNameWithoutExtension(videoPath) + ".srt");
             try
             {
-                File.Copy(file, target);
+                await File.WriteAllBytesAsync(target, content);
+                _plex.RefreshSectionAsync(PlexSection.Series, Path.GetDirectoryName(target)).FireForget(_logger);
                 return true;
             } catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"Could not copy {file} to {target}");
-                return false;
-            }
-            finally
-            {
-                File.Delete(file);
+                _logger.LogWarning(ex, $"Could not write content to {target}");
+                throw ex;
             }
         }
 
