@@ -251,6 +251,38 @@ namespace MovieMoverCore.Services
             _logger.LogInformation($"Could not resolve {downloadPath} to a UUID");
             return false;
         }
+
+        public async Task<List<JD_CrawledPackage>> QueryCrawledPackages()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return new List<JD_CrawledPackage>();
+            }
+            var (state, list) = await Device_QueryCrawledPackagesAsync();
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not remove download packages. State: {state}");
+                return new List<JD_CrawledPackage>();
+            }
+            return list;
+        }
+
+        public async Task<bool> StartPackageDownload(long uuid)
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var state = await Device_MoveToDownloadsAsync(uuid);
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not start download of package {uuid}. Current state: {_CurrentState}");
+                return false;
+            }
+            return true;
+        }
         #endregion
 
 
@@ -806,11 +838,11 @@ namespace MovieMoverCore.Services
             }
         }
 
-        private async Task<JDState> Device_MoveToDownloadsAsync(JD_CrawledPackage package)
+        private async Task<JDState> Device_MoveToDownloadsAsync(long uuid)
         {
             try
             {
-                await CallDeviceAsync<dynamic>("/linkgrabberv2/moveToDownloadlist", new object[0], new long[] { package.UUID });
+                await CallDeviceAsync<dynamic>("/linkgrabberv2/moveToDownloadlist", new object[0], new long[] { uuid });
                 return JDState.Ready;
             } catch (Exception ex)
             {
