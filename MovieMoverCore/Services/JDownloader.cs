@@ -207,7 +207,7 @@ namespace MovieMoverCore.Services
             //        p.IsExtracting = true;
             //    }
             //}
-            list.AsParallel().ForAll(async p =>
+            foreach (var p in list.Where(jp => jp.BytesLoaded >= jp.BytesTotal))
             {
                 List<JD_ArchiveStatus> archState;
                 (state, archState) = await Device_GetArchiveInfoAsync(p);
@@ -215,7 +215,7 @@ namespace MovieMoverCore.Services
                 {
                     p.IsExtracting = true;
                 }
-            });
+            }
 
             LastDownloadStates.Clear();
             LastDownloadStates.AddRange(list);
@@ -779,7 +779,8 @@ namespace MovieMoverCore.Services
             try
             {
                 var param = new long[] { package.UUID };
-                var response = await CallDeviceAsync<List<JD_ArchiveStatus>>("/extraction/getArchiveInfo", new object[0], param);
+                // Todo: figure this out more precisely
+                var response = await CallDeviceAsync<List<JD_ArchiveStatus>>("/extraction/getArchiveInfo", param, param);
 
                 return (JDState.Ready, response);
             } catch (Exception ex)
