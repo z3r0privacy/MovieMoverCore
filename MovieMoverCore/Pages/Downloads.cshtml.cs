@@ -72,7 +72,7 @@ namespace MovieMoverCore.Pages
                         {
                             JD_PackageState.Decrypt => "Decrypting...",
                             JD_PackageState.Download => $"Downloading... {stateData.DownloadPercentage:0}%",
-                            JD_PackageState.Extract => "Extracting...",
+                            JD_PackageState.Extract => stateData.Status, // "Extracting...",
                             JD_PackageState.Wait => "Waiting to start...",
                             _ => stateData.PackageState.ToString(),
                         };

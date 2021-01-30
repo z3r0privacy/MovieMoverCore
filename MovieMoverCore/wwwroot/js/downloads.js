@@ -27,9 +27,10 @@ function getDownloadData() {
                     selectedCards.push(copy[i]);
                 }
             }
-
-            setTimeout(getDownloadData, 5000);
-    });
+        })
+        .always(function () {
+            setTimeout(getDownloadData, 2000);
+        });
 }
 
 
