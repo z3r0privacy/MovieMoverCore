@@ -21,7 +21,7 @@ namespace MovieMoverCore.Pages
         private IJDownloader _jDownloader;
 
 
-        private string _cardTemplate = @"
+        private static string _cardTemplateDownloads = @"
 <div class=""col-md-4 my-2"">
     <div class=""card"" style=""width: 18rem;"" id=""{0}"" onclick=""toggleSelection('{0}');"">
         <div class=""card-body"">
@@ -30,6 +30,20 @@ namespace MovieMoverCore.Pages
         </div>
         <div class=""progress mx-2 mb-2""  style=""height: 4px;"">
             <div class=""progress-bar {3}"" role=""progressbar"" style=""width: {2}%"" aria-valuenow=""25"" aria-valuemin=""0"" aria-valuemax=""100""></div>
+        </div>
+    </div>
+</div>
+";
+
+        private static string _cardTemplatePackages = @"
+<div class=""col-md-4 my-2"">
+    <div class=""card"" style=""width: 18rem;"">
+        <div class=""card-body"">
+            <h6 class=""card-subtitle mb-2 text-muted"">{0}</h6>
+            <div class=""d-flex justify-content-center"">
+                <input id=""dlpkg_{1}"" type=""button"" value=""Download"" onclick=""startPackageDownload({1})"" class=""btn btn-primary mx-2"">
+                <input id=""rmpkg_{1}"" type=""button"" value=""Remove"" onclick=""removePackage({1})"" class=""btn btn-primary mx-2"">
+            </div>
         </div>
     </div>
 </div>
@@ -86,7 +100,7 @@ namespace MovieMoverCore.Pages
                         };
                     }
 
-                    sb.AppendLine(string.Format(_cardTemplate, name, state, stateData?.DownloadPercentage ?? 0, bgprogress));
+                    sb.AppendLine(string.Format(_cardTemplateDownloads, name, state, stateData?.DownloadPercentage ?? 0, bgprogress));
                 }
             } else
             {
@@ -154,6 +168,34 @@ namespace MovieMoverCore.Pages
                 s.ID
             });
             return new JsonResult(JsonSerializer.Serialize(states));
+        }
+
+        public async Task<IActionResult> OnGetPendingPackagesAsync()
+        {
+            var packages = _jDownloader.QueryCrawledPackagesAsync();
+            var sb = new StringBuilder();
+            var list = new List<object>();
+            foreach (var p in await packages)
+            {
+                var size = $"{(p.BytesTotal / (double)1_048_576_000):f1}"; // 1024*1024=1’048’576 * 1000 = 1’048’576’000 ==> ??? why
+                // --> JD propably calculates MBs (1024*1024) and then only moves the dot for displaying GB (therefore 1000)
+                sb.Append(string.Format(_cardTemplatePackages, $"{p.Name} ({size} GB)", p.UUID.ToString()));
+                list.Add(new
+                {
+                    Name = $"{p.Name} ({size} GB)",
+                    Id = p.UUID.ToString()
+                });
+            }
+            return new JsonResult(JsonSerializer.Serialize(list));
+        }
+
+        public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] long uuid)
+        {
+            if (ModelState.IsValid && await _jDownloader.StartPackageDownloadAsync(uuid))
+            {
+                return new OkResult();
+            }
+            return new NotFoundResult();
         }
 
         public IActionResult OnPostDismissFmo([FromBody] int id)
