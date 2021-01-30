@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:3.1-buster-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:3.1-buster AS build
 WORKDIR /src
 COPY ["MovieMoverCore/MovieMoverCore.csproj", "MovieMoverCore/"]
 RUN dotnet restore "MovieMoverCore/MovieMoverCore.csproj"
