@@ -33,6 +33,81 @@ function getDownloadData() {
         });
 }
 
+var templatePendingPackage = `
+<div id="{1}" class="col-md-4 my-2">
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h6 class="card-subtitle mb-2 text-muted">{0}</h6>
+            <div class="d-flex justify-content-center">
+                <input id="dlpkg_{1}" type="button" value="Download" onclick="startPackageDownload({1})" class="btn btn-primary mx-2">
+                <input id="rmpkg_{1}" type="button" value="Remove" onclick="removePackage({1})" class="btn btn-primary mx-2">
+            </div>
+        </div>
+    </div>
+</div>
+`
+pendingPackages = []
+function getPackagesData() {
+    $.ajax({
+        url: '/Downloads?handler=PendingPackages',
+        type: 'GET',
+        contentType: 'application/json',
+    })
+        .done(function (result) {
+            //document.getElementById("pendingPackages").innerHTML = JSON.parse(result);
+            var log = "";
+            var data = JSON.parse(result);
+            var mainDiv = document.getElementById("pendingPackages");
+            var existDiv = mainDiv.querySelectorAll(":scope > div");
+            var idsPresent = [];
+            for (var j = 0; existDiv && j < existDiv.length; j++) {
+                found = false;
+                for (var i = 0; !found && i < data.length; i++) {
+                    if (data[i].Id == existDiv[j].id) {
+                        found = true;
+                        idsPresent.push(data[i].Id);
+                        log += "Keeping " + data[i].Id + ", ";
+                    }
+                }
+                if (!found) {
+                    log += "Removing " + existDiv[i].id + ", ";
+                    mainDiv.removeChild(existDiv[j]);
+                }
+            }
+            for (var i = 0; i < data.length; i++) {
+                if (!idsPresent.includes(data[i].Id)) {
+                    //var el = templatePendingPackage.format(data[i].Name, data[i].Id);
+                    var el = templatePendingPackage.replace(/\{0\}/g, data[i].Name).replace(/\{1\}/g, data[i].Id);
+                    mainDiv.innerHTML += el;
+                    log += "Adding " + data[i].Id + ", ";
+                }
+            }
+
+            console.log(log);
+        })
+        .always(function () {
+            setTimeout(getPackagesData, 2000);
+        });
+}
+
+function startPackageDownload(uuid) {
+    $.ajax({
+        url: '/Downloads?handler=StartDownload',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(uuid),
+        customId: uuid,
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    }).done(function (result) {
+
+    });
+}
+
+function removePackage(uuid) {
+    alert("Not yet implemented");
+}
 
 // !! DO NOT REMOVE THE $ -> AJAX SAVE OF RESPONSE DATA BREAKS!
 $seasonData = [];
@@ -167,3 +242,4 @@ function dismissFMO(id) {
 
 getDownloadData();
 getMoveOps();
+getPackagesData();

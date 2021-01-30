@@ -39,6 +39,8 @@ namespace MovieMoverCore.Services
         Task<List<JD_FilePackage>> QueryDownloadStatesAsync();
         Task<bool> RemoveDownloadPackageAsync(long uuid);
         Task<bool> RemoveDownloadPackageAsync(string downloadPath);
+        Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync();
+        Task<bool> StartPackageDownloadAsync(long uuid);
     }
 
     public class JDownloader : IJDownloader
@@ -252,7 +254,7 @@ namespace MovieMoverCore.Services
             return false;
         }
 
-        public async Task<List<JD_CrawledPackage>> QueryCrawledPackages()
+        public async Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync()
         {
             if (!IsReady())
             {
@@ -268,7 +270,7 @@ namespace MovieMoverCore.Services
             return list;
         }
 
-        public async Task<bool> StartPackageDownload(long uuid)
+        public async Task<bool> StartPackageDownloadAsync(long uuid)
         {
             if (!IsReady())
             {
