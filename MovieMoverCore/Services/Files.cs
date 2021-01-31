@@ -301,7 +301,7 @@ namespace MovieMoverCore.Services
             } catch (Exception ex)
             {
                 _logger.LogWarning(ex, $"Could not write content to {target}");
-                throw ex;
+                throw;
             }
         }
 

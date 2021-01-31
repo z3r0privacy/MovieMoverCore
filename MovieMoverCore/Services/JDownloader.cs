@@ -666,7 +666,7 @@ namespace MovieMoverCore.Services
                     ex = ex.InnerException;
                 }
                 _logger.LogError(sb.ToString());
-                throw hre;
+                throw;
             }
         }
 
