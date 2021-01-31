@@ -41,6 +41,8 @@ namespace MovieMoverCore.Services
         Task<bool> RemoveDownloadPackageAsync(string downloadPath);
         Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync();
         Task<bool> StartPackageDownloadAsync(long uuid);
+        Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null);
+        Task<bool> RemoveQueriedDownloadLinksAsync(long uuid);
     }
 
     public class JDownloader : IJDownloader
@@ -233,7 +235,7 @@ namespace MovieMoverCore.Services
                 return false;
             }
 
-            var (state, result) = await Device_RemoveLinks(uuid);
+            var (state, result) = await Device_RemoveDownloadPackagesAsync(uuid);
 
             if (state != JDState.Ready)
             {
@@ -285,6 +287,37 @@ namespace MovieMoverCore.Services
             }
             return true;
         }
+
+        public async Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null)
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var (state, _) = await Device_AddLinksAsync(packageName, links);
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not add links to JDownloader. Current state: {_CurrentState}");
+                return false;
+            }
+            return true;
+        }
+
+        public async Task<bool> RemoveQueriedDownloadLinksAsync(long uuid)
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var (state, res) = await Device_RemoveQueriedPackages(uuid);
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not add links to JDownloader. Current state: {_CurrentState}");
+            }
+            return res;
+        }
         #endregion
 
 
@@ -312,7 +345,7 @@ namespace MovieMoverCore.Services
                     }
                     _logger.LogWarning(_lastException, "Cannot recover from exception.");
 
-                    _timeOut = DateTime.Now.AddMinutes(5);
+                    _timeOut = DateTime.Now.AddMinutes(1);
 
                     return false;
                 case JDState.NoDevice:
@@ -869,11 +902,24 @@ namespace MovieMoverCore.Services
             }
         }
 
-        private async Task<(JDState, bool)> Device_RemoveLinks(long uuid)
+        private async Task<(JDState, bool)> Device_RemoveDownloadPackagesAsync(long uuid)
         {
             try
             {
                 var resp = await CallDeviceAsync<string>("/downloadsV2/removeLinks", new long[] { }, new long[] { uuid });
+                return (JDState.Ready, true);
+            } catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false);
+            }
+        }
+
+        private async Task<(JDState, bool)> Device_RemoveQueriedPackages(long uuid)
+        {
+            try
+            {
+                await CallDeviceAsync<dynamic>("/linkgrabberv2/removeLinks", new long[] { }, new long[] { uuid });
                 return (JDState.Ready, true);
             } catch (Exception ex)
             {

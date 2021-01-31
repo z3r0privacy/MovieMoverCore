@@ -198,6 +198,33 @@ namespace MovieMoverCore.Pages
             return new NotFoundResult();
         }
 
+        public async Task<IActionResult> OnPostAddDownloadLinksAsync([FromBody] string links)
+        {
+            if (ModelState.IsValid)
+            {
+                var list = links.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList();
+                if (await _jDownloader.AddDownloadLinksAsync(list))
+                {
+                    return new OkResult();
+                }
+                return StatusCode(500);
+            }
+            return new BadRequestResult();
+        }
+
+        public async Task<IActionResult> OnPostRemoveDownloadLinksAsync([FromBody] long uuid)
+        {
+            if (ModelState.IsValid)
+            {
+                if (await _jDownloader.RemoveQueriedDownloadLinksAsync(uuid))
+                {
+                    return new OkResult();
+                }
+                return StatusCode(500);
+            }
+            return new BadRequestResult();
+        }
+
         public IActionResult OnPostDismissFmo([FromBody] int id)
         {
             if (ModelState.IsValid && _fileMoveWorker.DismissState(id))

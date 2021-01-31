@@ -104,7 +104,7 @@ namespace MovieMoverCore.Models
         [JsonPropertyName("links")]
         public string Links { get; set; }
         [JsonPropertyName("overwritePackagizerRules")]
-        public bool OverwritePackagizerRules { get; set; }
+        public bool OverwritePackagizerRules { get; set; } = true;
         [JsonPropertyName("packageName")]
         public string PackageName { get; set; }
         [JsonPropertyName("priority")]

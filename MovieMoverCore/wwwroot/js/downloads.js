@@ -28,6 +28,9 @@ function getDownloadData() {
                 }
             }
         })
+        .fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error refreshing download state: " + xhr.responseText);
+        })
         .always(function () {
             setTimeout(getDownloadData, 2000);
         });
@@ -85,6 +88,9 @@ function getPackagesData() {
 
             console.log(log);
         })
+        .fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error refreshing pending packages: " + xhr.responseText);
+        })
         .always(function () {
             setTimeout(getPackagesData, 2000);
         });
@@ -96,17 +102,34 @@ function startPackageDownload(uuid) {
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(uuid),
-        customId: uuid,
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
-    }).done(function (result) {
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error starting download: " + xhr.responseText);
+        })
+        .done(function (result) {
 
-    });
+        });
 }
 
 function removePackage(uuid) {
-    alert("Not yet implemented");
+    $.ajax({
+        url: '/Downloads?handler=RemoveDownloadLinks',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(uuid),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error removing download: " + xhr.responseText);
+        })
+        .done(function (result) {
+
+        });
 }
 
 // !! DO NOT REMOVE THE $ -> AJAX SAVE OF RESPONSE DATA BREAKS!
@@ -121,8 +144,9 @@ function showSeriesSelector() {
         url: '/Downloads?handler=Series',
         type: 'GET',
         contentType: 'application/json',
-        async: true,
-        success: function (result) {
+        async: true
+    })
+        .done(function (result) {
             data = JSON.parse(result);
             selector = document.getElementById("seriesSelector");
             selector.options.length = 0;
@@ -134,9 +158,38 @@ function showSeriesSelector() {
             document.getElementById("seriesMoverName").innerText = selectedCards[0];
             data.forEach(d => $seasonData.push(d));
             $('#seriesSelectorModal').modal();
+        })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error fetching series: " + xhr.responseText);
+        });
+}
 
+function showAddLinksModal() {
+    $('#addLinksModal').modal();
+}
+
+function addLinks() {
+    var textel = document.getElementById("txtarea_links");
+    var text = textel.value;
+    if (text.length === 0) {
+        alert("No Links entered");
+        return;
+    }
+    $.ajax({
+        url: '/Downloads?handler=AddDownloadLinks',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(text),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
-    });
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error adding links: " + xhr.responseText);
+        })
+        .done(function (result) {
+            textel.value = "";
+        });
 }
 
 
@@ -163,7 +216,10 @@ function moveSeries() {
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
-    });
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error adding move job: " + xhr.responseText);
+        });
 }
 
 function moveMovies() {
@@ -185,6 +241,9 @@ function moveMovies() {
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+        alert("Error adding move job: " + xhr.responseText);
     });
 }
 
@@ -221,6 +280,9 @@ function getMoveOps() {
                 el.innerHTML = str;
             }
             setTimeout(getMoveOps, 1000);
+        })
+        .fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error refreshing move state: " + xhr.responseText);
         });
 }
 
@@ -237,7 +299,10 @@ function dismissFMO(id) {
     }).done(function (result) {
         var li = document.getElementById("fmo_" + this.customId);
         li.parentNode.removeChild(li);
-    });
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error dismissing move operation state: " + xhr.responseText);
+        });
 }
 
 getDownloadData();
