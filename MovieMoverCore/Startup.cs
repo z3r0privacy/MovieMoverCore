@@ -36,6 +36,16 @@ namespace MovieMoverCore
             services.UseCache();
             services.UseJDownloader();
 
+            //services.UseSettings();
+            //services.UseDatabase(true);
+            //services.UsePlex(true);
+            //services.UseFileMover(true);
+            //services.UseEpGuide(true);
+            //services.UseSeriesVideoSearcher(true);
+            //services.UseSubtitles(true);
+            //services.UseCache(true);
+            //services.UseJDownloader(true);
+
 
             services.AddMvc().AddRazorPagesOptions(opts =>
             {

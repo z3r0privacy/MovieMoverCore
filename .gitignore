@@ -2,6 +2,7 @@
 /MovieMoverCore/DockerVolumes/secrets/*
 /MovieMoverCore/DockerVolumes/AppData/*
 /MovieMoverCore/DockerVolumes/data/*
+SettingsWinTesting.cs
 
 .vscode
 

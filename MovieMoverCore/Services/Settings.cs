@@ -12,6 +12,8 @@ namespace MovieMoverCore.Services
 {
     public interface ISettings
     {
+        string AppDataDirectory { get; }
+
         string Plex_BaseUrl { get; }
         string Plex_ApiToken { get; }
         string Plex_MoviesSectionId { get; }
@@ -30,8 +32,8 @@ namespace MovieMoverCore.Services
         public string JD_Email { get; }
         public string JD_Password { get;}
         public string JD_ApiPath { get; }
-        public string JD_My_ApiPath { get; set; }
-        public bool JD_Use_Direct { get; set; }
+        public string JD_My_ApiPath { get; }
+        public bool JD_Use_Direct { get; }
         public string JD_PreferredClient { get; }
 
         void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack);
@@ -69,6 +71,8 @@ namespace MovieMoverCore.Services
         public string JD_PreferredClient { get; private set; }
         public string JD_My_ApiPath { get; set; }
         public bool JD_Use_Direct { get; set; }
+
+        public string AppDataDirectory => "/appdata";
 
         private List<RemoteCertificateValidationCallback> _customValidators;
 

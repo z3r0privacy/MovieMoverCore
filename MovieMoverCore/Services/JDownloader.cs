@@ -40,9 +40,9 @@ namespace MovieMoverCore.Services
         Task<bool> RemoveDownloadPackageAsync(long uuid);
         Task<bool> RemoveDownloadPackageAsync(string downloadPath);
         Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync();
-        Task<bool> StartPackageDownloadAsync(long uuid);
+        Task<bool> StartPackageDownloadAsync(List<long> uuids);
         Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null);
-        Task<bool> RemoveQueriedDownloadLinksAsync(long uuid);
+        Task<bool> RemoveQueriedDownloadLinksAsync(List<long> uuids);
     }
 
     public class JDownloader : IJDownloader
@@ -272,17 +272,17 @@ namespace MovieMoverCore.Services
             return list;
         }
 
-        public async Task<bool> StartPackageDownloadAsync(long uuid)
+        public async Task<bool> StartPackageDownloadAsync(List<long> uuids)
         {
             if (!IsReady())
             {
                 _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
                 return false;
             }
-            var state = await Device_MoveToDownloadsAsync(uuid);
+            var state = await Device_MoveToDownloadsAsync(uuids);
             if (state != JDState.Ready)
             {
-                _logger.LogWarning(_lastException, $"Could not start download of package {uuid}. Current state: {_CurrentState}");
+                _logger.LogWarning(_lastException, $"Could not start download of packages {uuids}. Current state: {_CurrentState}");
                 return false;
             }
             return true;
@@ -304,17 +304,17 @@ namespace MovieMoverCore.Services
             return true;
         }
 
-        public async Task<bool> RemoveQueriedDownloadLinksAsync(long uuid)
+        public async Task<bool> RemoveQueriedDownloadLinksAsync(List<long> uuids)
         {
             if (!IsReady())
             {
                 _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
                 return false;
             }
-            var (state, res) = await Device_RemoveQueriedPackages(uuid);
+            var (state, res) = await Device_RemoveQueriedPackages(uuids);
             if (state != JDState.Ready)
             {
-                _logger.LogWarning(_lastException, $"Could not add links to JDownloader. Current state: {_CurrentState}");
+                _logger.LogWarning(_lastException, $"Could not remove links from JDownloader. Current state: {_CurrentState}");
             }
             return res;
         }
@@ -874,11 +874,11 @@ namespace MovieMoverCore.Services
             }
         }
 
-        private async Task<JDState> Device_MoveToDownloadsAsync(long uuid)
+        private async Task<JDState> Device_MoveToDownloadsAsync(List<long> uuids)
         {
             try
             {
-                await CallDeviceAsync<dynamic>("/linkgrabberv2/moveToDownloadlist", new object[0], new long[] { uuid });
+                await CallDeviceAsync<dynamic>("/linkgrabberv2/moveToDownloadlist", new object[0], uuids.ToArray());
                 return JDState.Ready;
             } catch (Exception ex)
             {
@@ -915,11 +915,11 @@ namespace MovieMoverCore.Services
             }
         }
 
-        private async Task<(JDState, bool)> Device_RemoveQueriedPackages(long uuid)
+        private async Task<(JDState, bool)> Device_RemoveQueriedPackages(List<long> uuids)
         {
             try
             {
-                await CallDeviceAsync<dynamic>("/linkgrabberv2/removeLinks", new long[] { }, new long[] { uuid });
+                await CallDeviceAsync<dynamic>("/linkgrabberv2/removeLinks", new long[] { }, uuids.ToArray());
                 return (JDState.Ready, true);
             } catch (Exception ex)
             {

@@ -36,12 +36,14 @@ namespace MovieMoverCore.Services
         private readonly ILogger<DB> _logger;
         private List<Series> _series;
         private ReaderWriterLockSlim _seriesRwLock;
-        private static string _dbDirectory = "/appdata";
-        private static string _dbFileSeries = Path.Combine(_dbDirectory, "db.json");
+        private string _dbFileSeries; // = Path.Combine(_dbDirectory, "db.json");
 
-        public DB(ILogger<DB> logger, IHostApplicationLifetime hostApplicationLifetime)
+        public DB(ILogger<DB> logger, ISettings settings, IHostApplicationLifetime hostApplicationLifetime)
         {
             _logger = logger;
+
+            var _dbDirectory = settings.AppDataDirectory;
+            _dbFileSeries = Path.Combine(_dbDirectory, "db.json");
 
             if (!Directory.Exists(_dbDirectory))
             {
@@ -141,19 +143,16 @@ namespace MovieMoverCore.Services
             {
                 lock (_dbFileSeries)
                 {
-                    string data;
                     _seriesRwLock.EnterReadLock();
                     try
                     {
-                        data = JsonSerializer.Serialize(_series);
-
+                        var data = JsonSerializer.Serialize(_series);
+                        File.WriteAllText(_dbFileSeries, data);
                     }
                     finally
                     {
                         _seriesRwLock.ExitReadLock();
                     }
-
-                    File.WriteAllText(_dbFileSeries, data);
                 }
             });
         }

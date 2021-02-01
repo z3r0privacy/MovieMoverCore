@@ -13,47 +13,84 @@ namespace MovieMoverCore.Services
     {
         public static IServiceCollection UseSettings(this IServiceCollection services)
         {
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                return services.AddSingleton<ISettings, SettingsWinTesting>();
+            }
             return services.AddSingleton<ISettings, Settings>();
         }
 
-        public static IServiceCollection UsePlex(this IServiceCollection services)
+        public static IServiceCollection UsePlex(this IServiceCollection services, bool useMock = false)
         {
+            if (useMock)
+            {
+                return services.AddSingleton<IPlex, PlexMock>();
+            }
             return services.AddSingleton<IPlex, Plex>();
         }
 
-        public static IServiceCollection UseFileMover(this IServiceCollection services)
+        public static IServiceCollection UseFileMover(this IServiceCollection services, bool useMock = false)
         {
+            if (useMock)
+            {
+                services.AddSingleton<IFileMoveWorker, FileWorkerMock>();
+                return services.AddTransient<IFileMover, FilesMoverMock>();
+            }
             services.AddSingleton<IFileMoveWorker, FileMoveWorker>();
             return services.AddTransient<IFileMover, FileMover>();
         }
 
-        public static IServiceCollection UseDatabase(this IServiceCollection services)
+        public static IServiceCollection UseDatabase(this IServiceCollection services, bool useMock = false)
         {
+            if (useMock)
+            {
+                return services.AddSingleton<IDatabase, DBMock>();
+            }
             return services.AddSingleton<IDatabase, DB>();
         }
 
-        public static IServiceCollection UseEpGuide(this IServiceCollection services)
+        public static IServiceCollection UseEpGuide(this IServiceCollection services, bool useMock = false)
         {
-            return services.AddTransient<IEpGuide, EpGuidesCom>();
+            if (useMock)
+            {
+                return services.AddScoped<IEpGuide, EpGuideMock>();
+            }
+            return services.AddScoped<IEpGuide, EpGuidesCom>();
         }
 
-        public static IServiceCollection UseSubtitles(this IServiceCollection services)
+        public static IServiceCollection UseSubtitles(this IServiceCollection services, bool useMock = false)
         {
-            return services.AddTransient<ISubtitles, Addic7ed>();
+            if (useMock)
+            {
+                return services.AddScoped<ISubtitles, SubtitlesMock>();
+            }
+            return services.AddScoped<ISubtitles, Addic7ed>();
         }
 
-        public static IServiceCollection UseSeriesVideoSearcher(this IServiceCollection services)
+        public static IServiceCollection UseSeriesVideoSearcher(this IServiceCollection services, bool useMock = false)
         {
-            return services.AddTransient<ISeriesVideoSearcher, SeriesVideoSearcher>();
+            if (useMock)
+            {
+                return services.AddScoped<ISeriesVideoSearcher, SeriesVideoSearcherMock>();
+            }
+            return services.AddScoped<ISeriesVideoSearcher, SeriesVideoSearcher>();
         }
 
-        public static IServiceCollection UseCache(this IServiceCollection services)
+        public static IServiceCollection UseCache(this IServiceCollection services, bool useMock = false)
         {
+            if (useMock)
+            {
+                return services.AddSingleton(typeof(ICache<,,>), typeof(CacheMock<,,>));
+            }
             return services.AddSingleton(typeof(ICache<,,>), typeof(Cache<,,>));
         }
 
-        public static IServiceCollection UseJDownloader(this IServiceCollection services)
+        public static IServiceCollection UseJDownloader(this IServiceCollection services, bool useMock = false)
         {
+            if (useMock)
+            {
+                return services.AddSingleton<IJDownloader, JDownloaderMock>();
+            }
             return services.AddSingleton<IJDownloader, JDownloader>();
         }
 

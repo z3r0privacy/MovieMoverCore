@@ -6,5 +6,6 @@
 	- daily clean -> in task => register clean method
 	- after series move
 	- subs/dl links
-- snahp.it autodownload
+- autodownload
 - middleware showing errors (a.k.a. jdownloader errors)
+- adding download all / remove all in queried packages

@@ -26,6 +26,7 @@ namespace MovieMoverCore.Services
     {
         private class EpCsv
         {
+            public EpCsv() { }
 
             public class CsvNumberConverter : ITypeConverter
             {
@@ -105,7 +106,7 @@ namespace MovieMoverCore.Services
 
             // get rid of noisy html tags -> load to xml and get innertext?
             // or just search <pre> and </pre> and use lines inbetween
-            var data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split(Environment.NewLine);
+            var data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split("\n");
             int start = 0, end = 0;
             while (!data[start++].Contains("<pre>")) ;
             while (!data[++end].Contains("</pre>")) ;
@@ -115,6 +116,7 @@ namespace MovieMoverCore.Services
             try
             {
                 using var csv = new CsvReader(sr, CultureInfo.InvariantCulture);
+                csv.Configuration.Delimiter = ",";
                 var records = csv.GetRecords<EpCsv>();
 
                 foreach (var r in records)

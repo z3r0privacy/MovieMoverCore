@@ -189,9 +189,9 @@ namespace MovieMoverCore.Pages
             return new JsonResult(JsonSerializer.Serialize(list));
         }
 
-        public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] long uuid)
+        public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] List<long> uuids)
         {
-            if (ModelState.IsValid && await _jDownloader.StartPackageDownloadAsync(uuid))
+            if (ModelState.IsValid && await _jDownloader.StartPackageDownloadAsync(uuids))
             {
                 return new OkResult();
             }
@@ -212,11 +212,11 @@ namespace MovieMoverCore.Pages
             return new BadRequestResult();
         }
 
-        public async Task<IActionResult> OnPostRemoveDownloadLinksAsync([FromBody] long uuid)
+        public async Task<IActionResult> OnPostRemoveDownloadLinksAsync([FromBody] List<long> uuids)
         {
             if (ModelState.IsValid)
             {
-                if (await _jDownloader.RemoveQueriedDownloadLinksAsync(uuid))
+                if (await _jDownloader.RemoveQueriedDownloadLinksAsync(uuids))
                 {
                     return new OkResult();
                 }

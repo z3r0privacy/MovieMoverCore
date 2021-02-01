@@ -21,17 +21,6 @@ namespace MovieMoverCore.Models
         [JsonPropertyName("data")]
         public object Data { get; set; }
     }
-    public class JDException : Exception
-    {
-        public JD_Error JDError { get; set; }
-
-        public JDException(JD_Error jdError)
-            : base($"An error {jdError.Type} occured on {jdError.Source}.")
-        {
-            JDError = jdError;
-        }
-
-    }
     public class JD_LoginResponse
     {
         [JsonPropertyName("sessiontoken")]

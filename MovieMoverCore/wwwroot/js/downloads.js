@@ -101,7 +101,7 @@ function startPackageDownload(uuid) {
         url: '/Downloads?handler=StartDownload',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify(uuid),
+        data: JSON.stringify([uuid]),
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
@@ -114,12 +114,20 @@ function startPackageDownload(uuid) {
         });
 }
 
+function startAllPackagesDownload() {
+
+}
+
+function removeAllPackages() {
+
+}
+
 function removePackage(uuid) {
     $.ajax({
         url: '/Downloads?handler=RemoveDownloadLinks',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify(uuid),
+        data: JSON.stringify([uuid]),
         headers: {
             RequestVerificationToken: document.getElementById('RequestVerificationToken').value
         }
