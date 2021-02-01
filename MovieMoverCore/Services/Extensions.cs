@@ -15,7 +15,9 @@ namespace MovieMoverCore.Services
         {
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
+#if DEBUG
                 return services.AddSingleton<ISettings, SettingsWinTesting>();
+#endif
             }
             return services.AddSingleton<ISettings, Settings>();
         }
