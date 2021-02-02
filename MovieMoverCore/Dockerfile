@@ -28,16 +28,17 @@ VOLUME /cert
 ENV PLEX_BaseUrl=
 ENV PLEX_MoviesSection=
 ENV PLEX_SeriesSection=
-ENV FILES_Downloads=
-ENV FILES_Movies=
-ENV FILES_Series=
+ENV FILES_Downloads=downloads
+ENV FILES_Movies=movies
+ENV FILES_Series=series
 ENV FILES_KeepSuccess=5
-ENV SUBS_SearchLink=
-ENV EPGUIDE_SearchLink=
-ENV DL_Series_SearchLink=
+ENV SUBS_SearchLink=https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search
+ENV EPGUIDE_SearchLink=http://epguides.com/{0}/
+ENV DL_Series_SearchLink=https://2ddl.ms/?q={0}
 ENV JD_Method=direct
 ENV JD_My_ApiPath=https://api.jdownloader.org
 ENV JD_PreferredClient=
+ENV JD_MaxRefreshInterval=2000
 
 # Secrets here
 ENV PLEX_ApiToken=

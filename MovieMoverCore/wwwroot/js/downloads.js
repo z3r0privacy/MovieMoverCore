@@ -32,7 +32,7 @@ function getDownloadData() {
             console.log("Error refreshing download state: " + xhr.responseText);
         })
         .always(function () {
-            setTimeout(getDownloadData, 2000);
+            setTimeout(getDownloadData, refreshInterval);
         });
 }
 
@@ -92,7 +92,7 @@ function getPackagesData() {
             console.log("Error refreshing pending packages: " + xhr.responseText);
         })
         .always(function () {
-            setTimeout(getPackagesData, 2000);
+            setTimeout(getPackagesData, refreshInterval);
         });
 }
 

@@ -36,10 +36,10 @@ namespace MovieMoverCore.Services
             if (useMock)
             {
                 services.AddSingleton<IFileMoveWorker, FileWorkerMock>();
-                return services.AddTransient<IFileMover, FilesMoverMock>();
+                return services.AddSingleton<IFileMover, FilesMoverMock>();
             }
             services.AddSingleton<IFileMoveWorker, FileMoveWorker>();
-            return services.AddTransient<IFileMover, FileMover>();
+            return services.AddSingleton<IFileMover, FileMover>();
         }
 
         public static IServiceCollection UseDatabase(this IServiceCollection services, bool useMock = false)
@@ -55,9 +55,9 @@ namespace MovieMoverCore.Services
         {
             if (useMock)
             {
-                return services.AddScoped<IEpGuide, EpGuideMock>();
+                return services.AddSingleton<IEpGuide, EpGuideMock>();
             }
-            return services.AddScoped<IEpGuide, EpGuidesCom>();
+            return services.AddSingleton<IEpGuide, EpGuidesCom>();
         }
 
         public static IServiceCollection UseSubtitles(this IServiceCollection services, bool useMock = false)
@@ -73,9 +73,9 @@ namespace MovieMoverCore.Services
         {
             if (useMock)
             {
-                return services.AddScoped<ISeriesVideoSearcher, SeriesVideoSearcherMock>();
+                return services.AddSingleton<ISeriesVideoSearcher, SeriesVideoSearcherMock>();
             }
-            return services.AddScoped<ISeriesVideoSearcher, SeriesVideoSearcher>();
+            return services.AddSingleton<ISeriesVideoSearcher, SeriesVideoSearcher>();
         }
 
         public static IServiceCollection UseCache(this IServiceCollection services, bool useMock = false)

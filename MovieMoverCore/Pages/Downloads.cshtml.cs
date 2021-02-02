@@ -49,12 +49,15 @@ namespace MovieMoverCore.Pages
 </div>
 ";
 
-        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker, IJDownloader jDownloader)
+        public int RefreshRate { get; }
+
+        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker, IJDownloader jDownloader, ISettings settings)
         {
             _fileMover = fileMover;
             _database = database;
             _fileMoveWorker = fileMoveWorker;
             _jDownloader = jDownloader;
+            RefreshRate = settings.JD_MaxRefreshInterval;
         }
 
         public void OnGet()

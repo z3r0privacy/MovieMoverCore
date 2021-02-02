@@ -102,8 +102,6 @@ namespace MovieMoverCore.Services
             xmldoc.LoadXml(lineCsvLink);
             var href = xmldoc.DocumentElement.ChildNodes[0].Attributes["href"].InnerText;
 
-            // use csv plugin -> csvhelper: https://joshclose.github.io/CsvHelper/examples/reading/get-dynamic-records
-
             // get rid of noisy html tags -> load to xml and get innertext?
             // or just search <pre> and </pre> and use lines inbetween
             var data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split("\n");

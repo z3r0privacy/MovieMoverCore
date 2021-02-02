@@ -188,43 +188,64 @@ namespace MovieMoverCore.Services
             }
         }
 
+        private DateTime _lastQueryDownloads;
+        private SemaphoreSlim _queryDownloadsSemaphore = new SemaphoreSlim(1,1);
         public async Task<List<JD_FilePackage>> QueryDownloadStatesAsync()
         {
-            if (!IsReady())
+            if (DateTime.Now - _lastQueryDownloads < TimeSpan.FromMilliseconds(_settings.JD_MaxRefreshInterval))
             {
-                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
-                return new List<JD_FilePackage>();
+                return LastDownloadStates;
             }
-            var (state, list) = await Device_QueryDownloadPackagesAsync();
-            _CurrentState = state;
-            if (state != JDState.Ready)
+
+            await _queryDownloadsSemaphore.WaitAsync();
+            try
             {
-                _logger.LogWarning(_lastException, $"Could not query download packages. State: {state}");
-                return new List<JD_FilePackage>();
-            }
-            //foreach (var p in pkgs.Item2) //.Where(pk => pk.PackageState == JD_PackageState.Finished))
-            //{
-            //    List<JD_ArchiveStatus> archiveStatus;
-            //    (state, archiveStatus) = Device_GetArchiveInfoAsync(p).Result;
-            //    if (archiveStatus.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
-            //    {
-            //        p.IsExtracting = true;
-            //    }
-            //}
-            foreach (var p in list.Where(jp => jp.BytesLoaded >= jp.BytesTotal))
-            {
-                List<JD_ArchiveStatus> archState;
-                (state, archState) = await Device_GetArchiveInfoAsync(p);
-                if (archState.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
+                if (DateTime.Now - _lastQueryDownloads < TimeSpan.FromMilliseconds(_settings.JD_MaxRefreshInterval))
                 {
-                    p.IsExtracting = true;
+                    return LastDownloadStates;
                 }
+
+                if (!IsReady())
+                {
+                    _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                    return new List<JD_FilePackage>();
+                }
+                var (state, list) = await Device_QueryDownloadPackagesAsync();
+                _CurrentState = state;
+                if (state != JDState.Ready)
+                {
+                    _logger.LogWarning(_lastException, $"Could not query download packages. State: {state}");
+                    return new List<JD_FilePackage>();
+                }
+                //foreach (var p in pkgs.Item2) //.Where(pk => pk.PackageState == JD_PackageState.Finished))
+                //{
+                //    List<JD_ArchiveStatus> archiveStatus;
+                //    (state, archiveStatus) = Device_GetArchiveInfoAsync(p).Result;
+                //    if (archiveStatus.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
+                //    {
+                //        p.IsExtracting = true;
+                //    }
+                //}
+                foreach (var p in list.Where(jp => jp.BytesLoaded >= jp.BytesTotal))
+                {
+                    List<JD_ArchiveStatus> archState;
+                    (state, archState) = await Device_GetArchiveInfoAsync(p);
+                    if (archState.Any(s => s.ControllerStatus != JD_ControllerStatus.NA))
+                    {
+                        p.IsExtracting = true;
+                    }
+                }
+
+                LastDownloadStates.Clear();
+                LastDownloadStates.AddRange(list);
+                _lastQueryDownloads = DateTime.Now;
+
+                return list;
             }
-
-            LastDownloadStates.Clear();
-            LastDownloadStates.AddRange(list);
-
-            return list;
+            finally
+            {
+                _queryDownloadsSemaphore.Release();
+            }
         }
 
         public async Task<bool> RemoveDownloadPackageAsync(long uuid)
@@ -256,20 +277,46 @@ namespace MovieMoverCore.Services
             return false;
         }
 
+        private DateTime _lastQueryCrawledPackages;
+        private SemaphoreSlim _crawledPackagesSemaphore = new SemaphoreSlim(1, 1);
+        private List<JD_CrawledPackage> _cacheCrwaledPackages = new List<JD_CrawledPackage>();
+
         public async Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync()
         {
-            if (!IsReady())
+            if (DateTime.Now - _lastQueryCrawledPackages < TimeSpan.FromMilliseconds(_settings.JD_MaxRefreshInterval))
             {
-                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
-                return new List<JD_CrawledPackage>();
+                return _cacheCrwaledPackages;
             }
-            var (state, list) = await Device_QueryCrawledPackagesAsync();
-            if (state != JDState.Ready)
+
+            await _crawledPackagesSemaphore.WaitAsync();
+            try
             {
-                _logger.LogWarning(_lastException, $"Could not remove download packages. State: {state}");
-                return new List<JD_CrawledPackage>();
+                if (DateTime.Now - _lastQueryCrawledPackages < TimeSpan.FromMilliseconds(_settings.JD_MaxRefreshInterval))
+                {
+                    return _cacheCrwaledPackages;
+                }
+
+                if (!IsReady())
+                {
+                    _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                    return new List<JD_CrawledPackage>();
+                }
+                var (state, list) = await Device_QueryCrawledPackagesAsync();
+                if (state != JDState.Ready)
+                {
+                    _logger.LogWarning(_lastException, $"Could not remove download packages. State: {state}");
+                    return new List<JD_CrawledPackage>();
+                }
+
+                _cacheCrwaledPackages.Clear();
+                _cacheCrwaledPackages.AddRange(list);
+                _lastQueryCrawledPackages = DateTime.Now;
+
+                return list;
+            } finally
+            {
+                _crawledPackagesSemaphore.Release();
             }
-            return list;
         }
 
         public async Task<bool> StartPackageDownloadAsync(List<long> uuids)

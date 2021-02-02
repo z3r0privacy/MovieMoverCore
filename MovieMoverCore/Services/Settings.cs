@@ -35,6 +35,7 @@ namespace MovieMoverCore.Services
         public string JD_My_ApiPath { get; }
         public bool JD_Use_Direct { get; }
         public string JD_PreferredClient { get; }
+        public int JD_MaxRefreshInterval { get; }
 
         void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack);
     }
@@ -69,10 +70,13 @@ namespace MovieMoverCore.Services
         public string JD_Password { get; private set; }
         public string JD_ApiPath { get; private set; }
         public string JD_PreferredClient { get; private set; }
-        public string JD_My_ApiPath { get; set; }
-        public bool JD_Use_Direct { get; set; }
+        public string JD_My_ApiPath { get; private set; }
+        public bool JD_Use_Direct { get; private set; }
+        public int JD_MaxRefreshInterval { get; private set; }
+
 
         public string AppDataDirectory => "/appdata";
+
 
         private List<RemoteCertificateValidationCallback> _customValidators;
 
@@ -126,6 +130,7 @@ namespace MovieMoverCore.Services
             JD_Email = Environment.GetEnvironmentVariable("JD_Email");
             JD_Password = Environment.GetEnvironmentVariable("JD_Password");
             JD_PreferredClient = Environment.GetEnvironmentVariable("JD_PreferredClient");
+            JD_MaxRefreshInterval = int.Parse(Environment.GetEnvironmentVariable("JD_MaxRefreshInterval"));
 #if DEBUG
             if (JD_Password == null && File.Exists("/secrets/jd_email.txt"))
             {
