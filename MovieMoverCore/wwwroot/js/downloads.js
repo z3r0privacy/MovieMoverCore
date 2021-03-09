@@ -115,7 +115,28 @@ function startPackageDownload(uuid) {
 }
 
 function startAllPackagesDownload() {
+    var mainDiv = document.getElementById("pendingPackages");
+    var existDiv = mainDiv.querySelectorAll(":scope > div");
+    var ids = [];
+    for (var i = 0; i < existDiv.length; i++) {
+        ids.push(existDiv[i].id);
+    }
 
+    $.ajax({
+        url: '/Downloads?handler=StartDownload',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(ids),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error starting download: " + xhr.responseText);
+        })
+        .done(function (result) {
+
+        });
 }
 
 function removeAllPackages() {
