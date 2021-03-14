@@ -119,7 +119,7 @@ namespace MovieMoverCore.Services
             return GetSeries(s => s.Id == id).FirstOrDefault();
         }
 
-        public async Task<bool> UpdateSeries(Series series)
+        public async Task<bool> UpdateSeriesAsync(Series series)
         {
             _seriesRwLock.EnterWriteLock();
             try
