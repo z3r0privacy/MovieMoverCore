@@ -8,6 +8,7 @@ using System.Security.Policy;
 using System.Security.Principal;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace MovieMoverCore.Models
 {
@@ -104,7 +105,7 @@ namespace MovieMoverCore.Models
         public JD_AddLinks_Request_Params(string packageName, List<string> links)
         {
             PackageName = packageName;
-            Links = links.Aggregate((s1, s2) => s1 + Environment.NewLine + s2);
+            Links = links.Select(l => HttpUtility.UrlEncode(l)).Aggregate((s1, s2) => s1 + Environment.NewLine + s2);
         }
     }
 

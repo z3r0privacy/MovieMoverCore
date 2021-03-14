@@ -119,10 +119,10 @@ namespace MovieMoverCore.Services
             return false;
         }
 
-        public bool UpdateSeries(Series series)
+        public Task<bool> UpdateSeriesAsync(Series series)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
