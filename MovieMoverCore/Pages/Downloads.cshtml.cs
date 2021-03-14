@@ -123,7 +123,7 @@ namespace MovieMoverCore.Pages
             return new JsonResult(JsonSerializer.Serialize(data));
         }
 
-        public IActionResult OnPostMoveSeries([FromBody] MoveToSeries moveToSeries)
+        public async Task<IActionResult> OnPostMoveSeriesAsync([FromBody] MoveToSeries moveToSeries)
         {
             var series = _database.GetSeries(moveToSeries.SeriesId);
             if (series == null)
@@ -144,7 +144,7 @@ namespace MovieMoverCore.Pages
             }
 
             series.LastSelectedSeason = moveToSeries.Season;
-            _database.UpdateSeries(series);
+            await _database.UpdateSeriesAsync(series);
 
             return new OkResult();
         }

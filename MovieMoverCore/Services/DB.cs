@@ -19,7 +19,7 @@ namespace MovieMoverCore.Services
         Series AddSeries(Series series);
         List<Series> GetSeries();
         Series GetSeries(int id);
-        bool UpdateSeries(Series series);
+        Task<bool> UpdateSeriesAsync(Series series);
         bool DeleteSeries(Series series);
         Task SaveSeriesChangesAsync();
 
@@ -119,7 +119,7 @@ namespace MovieMoverCore.Services
             return GetSeries(s => s.Id == id).FirstOrDefault();
         }
 
-        public bool UpdateSeries(Series series)
+        public async Task<bool> UpdateSeries(Series series)
         {
             _seriesRwLock.EnterWriteLock();
             try
@@ -130,6 +130,7 @@ namespace MovieMoverCore.Services
                     throw new KeyNotFoundException("The given series to be updated was not found.");
                 }
                 tbu.Apply(series);
+                await SaveSeriesChangesAsync();
                 return true;
             } finally
             {
