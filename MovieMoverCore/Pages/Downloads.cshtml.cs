@@ -144,7 +144,8 @@ namespace MovieMoverCore.Pages
             }
 
             series.LastSelectedSeason = moveToSeries.Season;
-            await _database.UpdateSeriesAsync(series);
+            _database.UpdateSeries(series);
+            await _database.SaveSeriesChangesAsync();
 
             return new OkResult();
         }

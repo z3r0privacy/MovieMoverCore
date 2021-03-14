@@ -72,7 +72,8 @@ namespace MovieMoverCore.Pages.SeriesCRUD
                 return Page();
             }
 
-            await _db.UpdateSeriesAsync(Series);
+            _db.UpdateSeries(Series);
+            await _db.SaveSeriesChangesAsync();
 
             return RedirectToPage("./Index");
         }
