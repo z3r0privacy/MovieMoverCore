@@ -86,7 +86,7 @@ namespace MovieMoverCore.Services
             _appKey = "MovieMover";
             _CurrentState = JDState.NotStarted;
             LastDownloadStates = new List<JD_FilePackage>();
-            _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath + "/jd" : _settings.JD_My_ApiPath;
+            _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath : _settings.JD_My_ApiPath;
         }
 
         public void Test()
