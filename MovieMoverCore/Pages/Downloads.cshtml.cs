@@ -76,7 +76,7 @@ namespace MovieMoverCore.Pages
                 {
                     var name = Path.GetFileName(f);
 
-                    var stateData = (await downloadStatesTask).FirstOrDefault(p => Path.GetFileName(p.SaveTo) == name);
+                    var stateData = (await downloadStatesTask).FirstOrDefault(p => Extensions.GetFileNamePlatformIndependent(p.SaveTo) == name);
                     string state;
                     string bgprogress;
                     if (stateData == null)
