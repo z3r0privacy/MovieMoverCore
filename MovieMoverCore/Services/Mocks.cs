@@ -241,6 +241,12 @@ namespace MovieMoverCore.Services
             return Task.FromResult(new List<JD_CrawledPackage>());
         }
 
+        public Task<(bool isDownloading, int speed)> QueryDownloadControllerState()
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            return Task.FromResult((false, 0));
+        }
+
         public Task<List<JD_FilePackage>> QueryDownloadStatesAsync()
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
