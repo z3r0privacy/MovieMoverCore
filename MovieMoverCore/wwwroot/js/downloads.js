@@ -36,6 +36,23 @@ function getDownloadData() {
         });
 }
 
+function getDownloadControllerStatus() {
+    $.ajax({
+        url: '/Downloads?handler=DownloadControllerState',
+        type: 'GET',
+        contentType: 'application/json',
+    })
+        .done(function (result) {
+            document.getElementById("dlspeed").innerHTML = JSON.parse(result);
+        })
+        .fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error refreshing download controller (speed) state: " + xhr.responseText);
+        })
+        .always(function () {
+            setTimeout(getDownloadControllerStatus, refreshInterval);
+        });
+}
+
 var templatePendingPackage = `
 <div id="{1}" class="col-md-4 my-2">
     <div class="card" style="width: 18rem;">
@@ -337,3 +354,4 @@ function dismissFMO(id) {
 getDownloadData();
 getMoveOps();
 getPackagesData();
+getDownloadControllerStatus()
