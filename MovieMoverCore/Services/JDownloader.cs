@@ -268,7 +268,7 @@ namespace MovieMoverCore.Services
 
         public async Task<bool> RemoveDownloadPackageAsync(string downloadPath)
         {
-            var package = LastDownloadStates.FirstOrDefault(pkg => Path.GetFileName(pkg.SaveTo) == downloadPath);
+            var package = LastDownloadStates.FirstOrDefault(pkg => Extensions.GetFileNamePlatformIndependent(pkg.SaveTo) == downloadPath);
             if (package != null)
             {
                 return await RemoveDownloadPackageAsync(package.UUID);
