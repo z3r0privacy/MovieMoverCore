@@ -43,6 +43,8 @@ namespace MovieMoverCore.Services
         Task<bool> StartPackageDownloadAsync(List<long> uuids);
         Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null);
         Task<bool> RemoveQueriedDownloadLinksAsync(List<long> uuids);
+
+        Task<(bool isDownloading, int speed)> QueryDownloadControllerState();
     }
 
     public class JDownloader : IJDownloader
@@ -333,6 +335,22 @@ namespace MovieMoverCore.Services
                 return false;
             }
             return true;
+        }
+
+        public async Task<(bool isDownloading, int speed)> QueryDownloadControllerState()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return (false, 0);
+            }
+            var (state, isDownloading, speed) = await Device_QueryDownloadControllerState();
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not get state of download controller. Current state: {_CurrentState}");
+                return (false, 0);
+            }
+            return (isDownloading, speed);
         }
 
         public async Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null)
@@ -972,6 +990,26 @@ namespace MovieMoverCore.Services
             {
                 _lastException = ex;
                 return (JDState.Error, false);
+            }
+        }
+
+        private async Task<(JDState, bool isDownloading, int downloadSpeed)> Device_QueryDownloadControllerState()
+        {
+            try
+            {
+                var taskState = CallDeviceAsync<string>("/downloadcontroller/getCurrentState");
+                var taskSpeed = CallDeviceAsync<int>("/downloadcontroller/getSpeedInBps");
+                if (await taskState == "RUNNING")
+                {
+                    return (JDState.Ready, true, await taskSpeed);
+                } else
+                {
+                    return (JDState.Ready, false, 0);
+                }
+            } catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false, 0);
             }
         }
         #endregion

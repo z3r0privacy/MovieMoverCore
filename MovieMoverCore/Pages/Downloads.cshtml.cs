@@ -123,6 +123,24 @@ namespace MovieMoverCore.Pages
             return new JsonResult(JsonSerializer.Serialize(data));
         }
 
+        public async Task<IActionResult> OnGetDownloadControllerState()
+        {
+            var (downloading, speed) = await _jDownloader.QueryDownloadControllerState();
+            if (!downloading)
+            {
+                return new JsonResult(JsonSerializer.Serialize(""));
+            }
+            var units = new string[] { "B", "KB", "MB", "GB" };
+            var unit = 0;
+            var speedF = (double)speed;
+            while (speedF > 1000 && unit < units.Length)
+            {
+                speedF /= 1024;
+                unit++;
+            }
+            return new JsonResult(JsonSerializer.Serialize($"Downloading: {speedF:0.00} {units[unit]}/s"));
+        }
+
         public async Task<IActionResult> OnPostMoveSeriesAsync([FromBody] MoveToSeries moveToSeries)
         {
             var series = _database.GetSeries(moveToSeries.SeriesId);
