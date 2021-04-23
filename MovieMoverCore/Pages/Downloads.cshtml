@@ -12,6 +12,14 @@
     }
 }
 
+<!--
+
+<button type="button" style="border-top-width: 0px;padding-top: 0px;margin-bottom: 8px;" class="btn btn-primary btn-sm">
+                <img src="/img/bootstrap-reboot.svg" style="">
+            </button>
+
+-->
+
 <input type="hidden" id="RequestVerificationToken"
        name="RequestVerificationToken" value="@GetAntiXsrfRequestToken()">
 
@@ -20,7 +28,10 @@
     <div class="row">
         <div class="col-12">
             <h3 style="display: inline">Downloads</h3>
-            <span id="dlspeed" class="ml-4"></span>
+            <button type="button" id="btnRestart" style="border-top-width: 0px;padding-top: 0px;margin-bottom: 8px; visibility:hidden" class="btn btn-primary btn-sm ml-5" onclick="restartDownloads()">
+                <img src="/img/bootstrap-reboot.svg" style="">
+            </button>
+            <span id="dlspeed" class="ml-2"></span>
         </div>
     </div>
     <div>
@@ -61,7 +72,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Select Series</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal
+     *
+     *
+     *
+     *
+     *
+     * " aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>

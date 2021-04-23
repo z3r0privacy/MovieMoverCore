@@ -271,6 +271,11 @@ namespace MovieMoverCore.Services
             return Task.FromResult(false);
         }
 
+        public Task<bool> RestartDownloads()
+        {
+            return Task.FromResult(false);
+        }
+
         public Task<bool> StartPackageDownloadAsync(List<long> uuids)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");

@@ -43,8 +43,8 @@ namespace MovieMoverCore.Services
         Task<bool> StartPackageDownloadAsync(List<long> uuids);
         Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null);
         Task<bool> RemoveQueriedDownloadLinksAsync(List<long> uuids);
-
         Task<(bool isDownloading, int speed)> QueryDownloadControllerState();
+        Task<bool> RestartDownloads();
     }
 
     public class JDownloader : IJDownloader
@@ -282,6 +282,8 @@ namespace MovieMoverCore.Services
         private DateTime _lastQueryCrawledPackages;
         private SemaphoreSlim _crawledPackagesSemaphore = new SemaphoreSlim(1, 1);
         private List<JD_CrawledPackage> _cacheCrwaledPackages = new List<JD_CrawledPackage>();
+        private readonly SemaphoreSlim _ssRestartDownloads = new SemaphoreSlim(1);
+        private bool _lastResultRestartDownloads = false;
 
         public async Task<List<JD_CrawledPackage>> QueryCrawledPackagesAsync()
         {
@@ -344,7 +346,7 @@ namespace MovieMoverCore.Services
                 _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
                 return (false, 0);
             }
-            var (state, isDownloading, speed) = await Device_QueryDownloadControllerState();
+            var (state, isDownloading, speed) = await Device_QueryDownloadState();
             if (state != JDState.Ready)
             {
                 _logger.LogWarning(_lastException, $"Could not get state of download controller. Current state: {_CurrentState}");
@@ -382,6 +384,26 @@ namespace MovieMoverCore.Services
                 _logger.LogWarning(_lastException, $"Could not remove links from JDownloader. Current state: {_CurrentState}");
             }
             return res;
+        }
+
+        public async Task<bool> RestartDownloads()
+        {
+            try
+            {
+                if (await _ssRestartDownloads.WaitAsync(0))
+                {
+                    // we got the semaphore immediately, no one is restarting right now, so let's do it!
+                    _lastResultRestartDownloads = await RestartDownloads_int();
+                } else
+                {
+                    // someone is already restarting, wait for the result to come back, acquire the semaphore to return the value
+                    await _ssRestartDownloads.WaitAsync();
+                }
+                return _lastResultRestartDownloads;
+            } finally
+            {
+                _ssRestartDownloads.Release();
+            }
         }
         #endregion
 
@@ -450,8 +472,60 @@ namespace MovieMoverCore.Services
         #endregion
 
 
-        // Here, helper methods for en/decryption, signatures, etc are provided
+        // Here, helper methods for en/decryption, signatures, complex actions, etc are provided
         #region HelperMethods
+        private async Task<bool> RestartDownloads_int()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var (jdState1, state) = await Device_QueryDownloadControllerState();
+            if (jdState1 != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not restart (query state) downloads. Current state: {_CurrentState}");
+                return false;
+            }
+            if (state != "STOPPED_STATE" && state != "STOPPING")
+            {
+                var (jdState2, stoppingSuccess) = await Device_StopDownloads();
+                if (jdState2 != JDState.Ready)
+                {
+                    _logger.LogWarning(_lastException, $"Could not restart (stopping) downloads. Current state: {_CurrentState}");
+                    return false;
+                }
+                if (!stoppingSuccess)
+                {
+                    _logger.LogWarning($"Could not restart (stopping) downloads. Current state: {_CurrentState}");
+                    return false;
+                }
+            }
+            var startWait = DateTime.Now;
+            while (state != "STOPPED_STATE")
+            {
+                Thread.Sleep(100);
+                if ((DateTime.Now - startWait).TotalSeconds > 5)
+                {
+                    _logger.LogWarning($"Could not restart (stopping timed out) downloads.");
+                    return false;
+                }
+                var newState = await Device_QueryDownloadControllerState();
+                if (newState.jdState != JDState.Ready)
+                {
+                    _logger.LogWarning(_lastException, $"Could not restart (query state) downloads. Current state: {_CurrentState}");
+                    return false;
+                }
+                state = newState.state;
+            }
+            var (jdState3, started) = await Device_StartDownloads();
+            if (jdState3 != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not restart (starting) downloads. Current state: {_CurrentState}");
+                return false;
+            }
+            return started;
+        }
 
         public static byte[] StringToByteArray(string hex)
         {
@@ -993,23 +1067,77 @@ namespace MovieMoverCore.Services
             }
         }
 
-        private async Task<(JDState, bool isDownloading, int downloadSpeed)> Device_QueryDownloadControllerState()
+        private async Task<(JDState, bool isDownloading, int downloadSpeed)> Device_QueryDownloadState()
+        {
+            var (jdState, state) = await Device_QueryDownloadControllerState();
+            if (jdState == JDState.Ready)
+            {
+                if (state == "RUNNING")
+                {
+                    var (jdState2, speed) = await Device_QueryDownloadSpeed();
+                    if (jdState2 == JDState.Ready)
+                    {
+                        return (JDState.Ready, true, speed);
+                    }
+                    return (jdState2, true, 0);
+                }
+            }
+            return (jdState, false, 0);
+        }
+
+        private async Task<(JDState jdState, string state)> Device_QueryDownloadControllerState()
         {
             try
             {
-                var taskState = CallDeviceAsync<string>("/downloadcontroller/getCurrentState");
-                var taskSpeed = CallDeviceAsync<int>("/downloadcontroller/getSpeedInBps");
-                if (await taskState == "RUNNING")
-                {
-                    return (JDState.Ready, true, await taskSpeed);
-                } else
-                {
-                    return (JDState.Ready, false, 0);
-                }
-            } catch (Exception ex)
+                var taskState = await CallDeviceAsync<string>("/downloadcontroller/getCurrentState");
+                return (JDState.Ready, taskState);
+            }
+            catch (Exception ex)
             {
                 _lastException = ex;
-                return (JDState.Error, false, 0);
+                return (JDState.Error, null);
+            }
+        }
+
+        private async Task<(JDState jdState, int speed)> Device_QueryDownloadSpeed()
+        {
+            try
+            {
+                var speed = await CallDeviceAsync<int>("/downloadcontroller/getSpeedInBps");
+                return (JDState.Ready, speed);
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, 0);
+            }
+        }
+
+        private async Task<(JDState, bool)> Device_StartDownloads()
+        {
+            try
+            {
+                var res = await CallDeviceAsync<bool>("/downloadcontroller/start");
+                return (JDState.Ready, res);
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false);
+            }
+        }
+
+        private async Task<(JDState, bool)> Device_StopDownloads()
+        {
+            try
+            {
+                var res = await CallDeviceAsync<bool>("/downloadcontroller/stop");
+                return (JDState.Ready, res);
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false);
             }
         }
         #endregion

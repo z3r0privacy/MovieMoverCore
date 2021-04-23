@@ -43,7 +43,13 @@ function getDownloadControllerStatus() {
         contentType: 'application/json',
     })
         .done(function (result) {
-            document.getElementById("dlspeed").innerHTML = JSON.parse(result);
+            var val = JSON.parse(result);
+            document.getElementById("dlspeed").innerHTML = val;
+            if (val.length > 0) {
+                document.getElementById("btnRestart").style.visibility = "visible";
+            } else {
+                document.getElementById("btnRestart").style.visibility = "hidden";
+            }
         })
         .fail(function (xhr, textStatus, errorThrown) {
             console.log("Error refreshing download controller (speed) state: " + xhr.responseText);
@@ -348,6 +354,19 @@ function dismissFMO(id) {
     })
         .fail(function (xhr, textStatus, errorThrown) {
             console.log("Error dismissing move operation state: " + xhr.responseText);
+        });
+}
+
+function restartDownloads() {
+    $.ajax({
+        url: '/Downloads?handler=RestartDownloads',
+        type: 'POST',
+        contentType: 'application/json',
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    }).fail(function (xhr, textStatus, errorThrown) {
+            console.log("Error restarting downloads: " + xhr.responseText);
         });
 }
 

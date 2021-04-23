@@ -135,7 +135,7 @@ namespace MovieMoverCore.Pages
             var speedF = (double)speed;
             while (speedF > 1000 && unit < units.Length)
             {
-                speedF /= 1024;
+                speedF /= 1000;
                 unit++;
             }
             return new JsonResult(JsonSerializer.Serialize($"Downloading: {speedF:0.00} {units[unit]}/s"));
@@ -254,6 +254,12 @@ namespace MovieMoverCore.Pages
                 return new OkResult();
             }
             return new NotFoundResult();
+        }
+
+        public async Task<IActionResult> OnPostRestartDownloads()
+        {
+            var success = await _jDownloader.RestartDownloads();
+            return new JsonResult(JsonSerializer.Serialize(success));
         }
     }
 }
