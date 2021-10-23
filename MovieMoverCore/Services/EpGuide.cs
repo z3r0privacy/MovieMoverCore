@@ -86,9 +86,17 @@ namespace MovieMoverCore.Services
                 return result;
             }
 
-            var wc = new WebClient();
-            var mainPageData = await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName));
-            var lineCsvLink = mainPageData.Split(Environment.NewLine).FirstOrDefault(l => l.Contains("exportToCSVmaze"));
+            string lineCsvLink = null;
+            try
+            {
+                var wc = new WebClient();
+                var mainPageData = await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName));
+                lineCsvLink = mainPageData.Split(Environment.NewLine).FirstOrDefault(l => l.Contains("exportToCSVmaze"));
+            } catch (WebException wex)
+            {
+                _logger.LogError(wex, $"Failed to fetch {string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName)}");
+                return (new List<EpisodeInfo>(), null);
+            }
 
             if (lineCsvLink == null)
             {
