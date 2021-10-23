@@ -87,9 +87,9 @@ namespace MovieMoverCore.Services
             }
 
             string lineCsvLink = null;
+            var wc = new WebClient();
             try
             {
-                var wc = new WebClient();
                 var mainPageData = await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName));
                 lineCsvLink = mainPageData.Split(Environment.NewLine).FirstOrDefault(l => l.Contains("exportToCSVmaze"));
             } catch (WebException wex)
@@ -112,7 +112,15 @@ namespace MovieMoverCore.Services
 
             // get rid of noisy html tags -> load to xml and get innertext?
             // or just search <pre> and </pre> and use lines inbetween
-            var data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split("\n");
+            string[] data = null;
+            try
+            {
+                data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split("\n");
+            } catch (WebException wex)
+            {
+                _logger.LogError(wex, $"Failed to fetch {string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href}");
+                return (new List<EpisodeInfo>(), null);
+            }
             int start = 0, end = 0;
             while (!data[start++].Contains("<pre>")) ;
             while (!data[++end].Contains("</pre>")) ;
