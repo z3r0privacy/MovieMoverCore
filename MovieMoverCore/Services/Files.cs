@@ -138,6 +138,28 @@ namespace MovieMoverCore.Services
             return fmo.Clone();
         }
 
+        private void MoveDir(string source, string destination)
+        {
+            if (!Directory.Exists(destination))
+            {
+                Directory.Move(source, destination);
+                return;
+            }
+
+            foreach (var srcFile in Directory.GetFiles(source))
+            {
+                var dstFile = Path.Combine(destination, Path.GetFileName(srcFile));
+                File.Move(srcFile, dstFile);
+            }
+            foreach (var srcDir in Directory.GetDirectories(source))
+            {
+                // GetfileName also returns the name of a directory
+                var dstDir = Path.Combine(destination, Path.GetFileName(srcDir));
+                MoveDir(srcDir, dstDir);
+            }
+            Directory.Delete(source);
+        }
+
         private void MoveWorker()
         {
             try
@@ -155,7 +177,7 @@ namespace MovieMoverCore.Services
                             {
                                 Directory.CreateDirectory(parentDir);
                             }
-                            Directory.Move(moveOp.Source, moveOp.Destination);
+                            MoveDir(moveOp.Source, moveOp.Destination);
                         }
                         else if (File.Exists(moveOp.Source))
                         {
