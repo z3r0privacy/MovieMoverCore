@@ -26,6 +26,7 @@ namespace MovieMoverCore.Services
 
         public string Subtitles_SearchLink { get; }
         public string EpGuide_SearchLink { get; }
+        public string EpGuide_AllShows { get; }
         public string DL_Series_SearchLink { get; }
 
 
@@ -61,6 +62,7 @@ namespace MovieMoverCore.Services
 
 
         public string EpGuide_SearchLink { get; private set; }
+        public string EpGuide_AllShows { get; private set; }
 
 
         public string DL_Series_SearchLink { get; private set; }
@@ -121,6 +123,7 @@ namespace MovieMoverCore.Services
             Subtitles_SearchLink = Environment.GetEnvironmentVariable("SUBS_SearchLink");
 
             EpGuide_SearchLink = Environment.GetEnvironmentVariable("EPGUIDE_SearchLink");
+            EpGuide_AllShows = Environment.GetEnvironmentVariable("EPGUIDE_AllShows");
 
             DL_Series_SearchLink = Environment.GetEnvironmentVariable("DL_Series_SearchLink");
 

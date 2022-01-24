@@ -71,12 +71,71 @@ namespace MovieMoverCore.Services
         private ISettings _settings;
         private ILogger<EpGuidesCom> _logger;
         private ICache<EpGuidesCom, EpisodeInfo, (List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> _cache;
+        private static readonly SemaphoreSlim ALLSHOWS_LOCK = new SemaphoreSlim(1, 1);
+        private Dictionary<string, int> _mazeCache;
+
 
         public EpGuidesCom(ISettings settings, ILogger<EpGuidesCom> logger, ICache<EpGuidesCom, EpisodeInfo, (List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> cache)
         {
             _settings = settings;
             _logger = logger;
             _cache = cache;
+            _mazeCache = new Dictionary<string, int>();
+        }
+
+        private async Task<string> AcquireCsv(string url)
+        {
+            var wc = new WebClient();
+            wc.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0");
+            var htmlresponse = await wc.DownloadStringTaskAsync(url);
+            var markerStart = "<pre>";
+            var markerStop = "</pre>";
+            var start = htmlresponse.IndexOf(markerStart) + markerStart.Length;
+            var stop = htmlresponse.IndexOf(markerStop, start);
+            if (start == -1 || stop == -1)
+            {
+                return htmlresponse;
+            }
+            return htmlresponse.Substring(start, stop - start).Trim();
+        }
+
+        private async Task<int> GetShowMaze(string name)
+        {
+            name = name.ToLower();
+            await ALLSHOWS_LOCK.WaitAsync();
+            try
+            {
+                if (!_mazeCache.ContainsKey(name))
+                {
+                    _logger.LogInformation("Download AllShows.txt file");
+                    var csv_raw = await AcquireCsv(_settings.EpGuide_AllShows);
+                    using var csv = new CsvReader(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(csv_raw))), CultureInfo.InvariantCulture);
+                    csv.Configuration.Delimiter = ",";
+                    csv.Configuration.HasHeaderRecord = false; // somehow does not work
+                    csv.Read(); // skip header row
+                    while (csv.Read())
+                    {
+                        var title = csv.GetField<string>(1);
+                        var _mazeid = csv.GetField<string>(3);
+                        int mazeid;
+                        if (!int.TryParse(_mazeid, out mazeid))
+                        {
+                            mazeid = 0;
+                        }
+                        _mazeCache[title.ToLower()] = mazeid;
+                    }
+                }
+                return _mazeCache[name];
+            } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read maze ids");
+                return -1;
+            }
+            finally
+            {
+                ALLSHOWS_LOCK.Release();
+            }
         }
 
         public async Task<(List<EpisodeInfo> upcoming, EpisodeInfo nextAdding)> GetEpisodesAsync(EpisodeInfo newestAvailable)
@@ -86,45 +145,18 @@ namespace MovieMoverCore.Services
                 return result;
             }
 
-            string lineCsvLink = null;
-            var wc = new WebClient();
-            try
-            {
-                var mainPageData = await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName));
-                lineCsvLink = mainPageData.Split(Environment.NewLine).FirstOrDefault(l => l.Contains("exportToCSVmaze"));
-            } catch (WebException wex)
-            {
-                _logger.LogError(wex, $"Failed to fetch {string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName)}");
-                return (new List<EpisodeInfo>(), null);
-            }
-
-            if (lineCsvLink == null)
-            {
-                throw new InvalidDataException("The returned page does not contain a csv link");
-            }
-
             var upcoming = new List<EpisodeInfo>();
             EpisodeInfo nextAdding = null;
 
-            var xmldoc = new XmlDocument();
-            xmldoc.LoadXml(lineCsvLink);
-            var href = xmldoc.DocumentElement.ChildNodes[0].Attributes["href"].InnerText;
-
-            // get rid of noisy html tags -> load to xml and get innertext?
-            // or just search <pre> and </pre> and use lines inbetween
-            string[] data = null;
-            try
+            var mazeid = await GetShowMaze(newestAvailable.Series.EpGuidesName);
+            if (mazeid < 0)
             {
-                data = (await wc.DownloadStringTaskAsync(string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href)).Split("\n");
-            } catch (WebException wex)
-            {
-                _logger.LogError(wex, $"Failed to fetch {string.Format(_settings.EpGuide_SearchLink, newestAvailable.Series.EpGuidesName) + href}");
+                _logger.LogWarning($"Could not get mazeid for show {newestAvailable.Series.EpGuidesName}");
                 return (new List<EpisodeInfo>(), null);
             }
-            int start = 0, end = 0;
-            while (!data[start++].Contains("<pre>")) ;
-            while (!data[++end].Contains("</pre>")) ;
-            var strData = data.Skip(start).Take(end - start).Aggregate((s1, s2) => s1 + Environment.NewLine + s2);
+            var strData = await AcquireCsv(string.Format(_settings.EpGuide_SearchLink, mazeid));
+
+            //var strData = data.Skip(start).Take(end - start).Aggregate((s1, s2) => s1 + Environment.NewLine + s2);
             using var memStream = new MemoryStream(Encoding.UTF8.GetBytes(strData));
             using var sr = new StreamReader(memStream);
             try
