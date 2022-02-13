@@ -16,7 +16,7 @@ namespace MovieMoverCore.Pages
     public class DownloadsModel : PageModel
     {
         private IFileMover _fileMover;
-        private IFileMoveWorker _fileMoveWorker;
+        private IFileOperationsWorker _fileOperationsWorker;
         private IDatabase _database;
         private IJDownloader _jDownloader;
 
@@ -51,11 +51,11 @@ namespace MovieMoverCore.Pages
 
         public int RefreshRate { get; }
 
-        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileMoveWorker fileMoveWorker, IJDownloader jDownloader, ISettings settings)
+        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileOperationsWorker fileMoveWorker, IJDownloader jDownloader, ISettings settings)
         {
             _fileMover = fileMover;
             _database = database;
-            _fileMoveWorker = fileMoveWorker;
+            _fileOperationsWorker = fileMoveWorker;
             _jDownloader = jDownloader;
             RefreshRate = settings.JD_MaxRefreshInterval;
         }
@@ -180,11 +180,27 @@ namespace MovieMoverCore.Pages
             return new OkResult();
         }
 
-        public IActionResult OnGetMoveStates()
+        public IActionResult OnDeleteDownloads([FromBody] string[] deleteDownloads)
         {
-            var states = _fileMoveWorker.QueryStates().Select(s => new
+            bool errOccured = false;
+            foreach (var dl in deleteDownloads)
             {
-                s.Name,
+                if (_fileMover.IsDownloadNameLegal(dl, out var fullPath)) {
+                    _fileOperationsWorker.QueueDeleteOperation(fullPath);
+                } else
+                {
+                    errOccured = true;
+                }
+            }
+            
+            return !errOccured ? new OkResult() : new NotFoundResult();
+        }
+
+        public IActionResult OnGetFileOperationStates()
+        {
+            var states = _fileOperationsWorker.QueryStates().Select(s => new
+            {
+                Value = s.ToString(),
                 CurrentState = s.CurrentState.ToString(),
                 s.ErrorMessage,
                 s.ID
@@ -249,7 +265,7 @@ namespace MovieMoverCore.Pages
 
         public IActionResult OnPostDismissFmo([FromBody] int id)
         {
-            if (ModelState.IsValid && _fileMoveWorker.DismissState(id))
+            if (ModelState.IsValid && _fileOperationsWorker.DismissState(id))
             {
                 return new OkResult();
             }

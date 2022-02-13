@@ -16,11 +16,12 @@ using System.Threading.Tasks;
 
 namespace MovieMoverCore.Services
 {
-    public interface IFileMoveWorker
+    public interface IFileOperationsWorker
     {
+        FileDeleteOperation QueueDeleteOperation(string source);
         FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection);
-        List<FileMoveOperation> QueryStates();
-        FileMoveState QueryState(FileMoveOperation fmo);
+        List<IFileOperation> QueryStates();
+        FileOperationState QueryState(IFileOperation fo);
         bool DismissState(int id);
     }
 
@@ -32,31 +33,32 @@ namespace MovieMoverCore.Services
         List<string> GetSeriesEntries();
         Task<bool> AddSubtitleAsync(string fileName, byte[] content, Series series);
         bool ValidateSeriesPath(Series series, bool isNewEntry = false);
+        bool IsDownloadNameLegal(string name, out string fullPath);
     }
 
-    public class FileMoveWorker : IFileMoveWorker
+    public class FileOperationsWorker : IFileOperationsWorker
     {
         // uses a concurrentqueue in implementation
-        private BlockingCollection<FileMoveOperation> _operationsPending;
-        private List<FileMoveOperation> _allOperations;
+        private BlockingCollection<IFileOperation> _operationsPending;
+        private List<IFileOperation> _allOperations;
         private ReaderWriterLockSlim _allOperationsRWLock;
         private Task _moveTask;
         private IPlex _plex;
         private IJDownloader _jDownloader;
         private ISettings _settings;
-        private ILogger<FileMoveWorker> _logger;
+        private ILogger<FileOperationsWorker> _logger;
         private uint _ID;
 
-        public FileMoveWorker(IPlex plex, IJDownloader jDownloader, ISettings settings, ILogger<FileMoveWorker> logger)
+        public FileOperationsWorker(IPlex plex, IJDownloader jDownloader, ISettings settings, ILogger<FileOperationsWorker> logger)
         {
             _plex = plex;
             _jDownloader = jDownloader;
             _settings = settings;
             _logger = logger;
-            _operationsPending = new BlockingCollection<FileMoveOperation>();
-            _allOperations = new List<FileMoveOperation>();
+            _operationsPending = new BlockingCollection<IFileOperation>();
+            _allOperations = new List<IFileOperation>();
             _allOperationsRWLock = new ReaderWriterLockSlim();
-            _moveTask = Task.Run(MoveWorker);
+            _moveTask = Task.Run(Worker);
             _ID = 0;
         }
 
@@ -78,12 +80,12 @@ namespace MovieMoverCore.Services
             }
         }
 
-        public List<FileMoveOperation> QueryStates()
+        public List<IFileOperation> QueryStates()
         {
             _allOperationsRWLock.EnterWriteLock(); 
             try
             {
-                var toRemove = _allOperations.Where(fmo => fmo.CurrentState == FileMoveState.Success && fmo.Finished.HasValue && fmo.Finished.Value.AddMinutes(_settings.Files_KeepSuccess) < DateTime.Now).ToList();
+                var toRemove = _allOperations.Where(fo => fo.CurrentState == FileOperationState.Success && fo.Finished.HasValue && fo.Finished.Value.AddMinutes(_settings.Files_KeepSuccess) < DateTime.Now).ToList();
                 if (toRemove.Any())
                 {
                     foreach (var rem in toRemove)
@@ -100,18 +102,50 @@ namespace MovieMoverCore.Services
             _allOperationsRWLock.EnterReadLock();
             try
             {
-                return _allOperations.Select(fmo => fmo.Clone()).ToList();
+                return _allOperations.Select(fo => (IFileOperation)fo.Clone()).ToList();
             } finally
             {
                 _allOperationsRWLock.ExitReadLock();
             }
         }
 
+        private void AddToAllOperationsList(IFileOperation fo)
+        {
+            _allOperationsRWLock.EnterWriteLock();
+            try
+            {
+                fo.ID = _ID;
+                ++_ID;
+                _allOperations.Add(fo);
+            }
+            finally
+            {
+                _allOperationsRWLock.ExitWriteLock();
+            }
+        }
+
+        public FileDeleteOperation QueueDeleteOperation(string source)
+        {
+            var fdo = new FileDeleteOperation
+            {
+                CurrentState = FileOperationState.Queued,
+                ErrorMessage = null,
+                Finished = null,
+                Source = source
+            };
+
+            AddToAllOperationsList(fdo);
+            _operationsPending.Add(fdo);
+            _logger.LogDebug("Queued new FileDeleteOperation with source {0}", source);
+
+            return fdo.Clone();
+        }
+
         public FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection)
         {
             var fmo = new FileMoveOperation
             {
-                CurrentState = FileMoveState.Queued,
+                CurrentState = FileOperationState.Queued,
                 Destination = destination,
                 ErrorMessage = null,
                 Finished = null,
@@ -121,16 +155,8 @@ namespace MovieMoverCore.Services
             };
 
             // todo: test from here
-            _allOperationsRWLock.EnterWriteLock();
-            try
-            {
-                fmo.ID = _ID;
-                ++_ID;
-                _allOperations.Add(fmo);
-            } finally
-            {
-                _allOperationsRWLock.ExitWriteLock();
-            }
+            AddToAllOperationsList(fmo);
+
             _operationsPending.Add(fmo);
 
             _logger.LogDebug("Queued new FileMoveOperation named {0}", name);
@@ -138,69 +164,26 @@ namespace MovieMoverCore.Services
             return fmo.Clone();
         }
 
-        private void MoveDir(string source, string destination)
-        {
-            if (!Directory.Exists(destination))
-            {
-                Directory.Move(source, destination);
-                return;
-            }
+        
 
-            foreach (var srcFile in Directory.GetFiles(source))
-            {
-                var dstFile = Path.Combine(destination, Path.GetFileName(srcFile));
-                File.Move(srcFile, dstFile);
-            }
-            foreach (var srcDir in Directory.GetDirectories(source))
-            {
-                // GetfileName also returns the name of a directory
-                var dstDir = Path.Combine(destination, Path.GetFileName(srcDir));
-                MoveDir(srcDir, dstDir);
-            }
-            Directory.Delete(source);
-        }
-
-        private void MoveWorker()
+        private void Worker()
         {
             try
             {
                 while (!_operationsPending.IsCompleted)
                 {
                     var moveOp = _operationsPending.Take();
-                    moveOp.CurrentState = FileMoveState.Moving;
+                    moveOp.CurrentState = FileOperationState.InOperation;
                     try
                     {
-                        if (Directory.Exists(moveOp.Source))
-                        {
-                            var parentDir = Path.GetDirectoryName(moveOp.Destination);
-                            if (!Directory.Exists(parentDir))
-                            {
-                                Directory.CreateDirectory(parentDir);
-                            }
-                            MoveDir(moveOp.Source, moveOp.Destination);
-                        }
-                        else if (File.Exists(moveOp.Source))
-                        {
-                            File.Move(moveOp.Source, moveOp.Destination);
-                        }
-                        else
-                        {
-                            throw new FileNotFoundException("Could not find the source file", moveOp.Source);
-                        }
-
-                        Task.Run(() =>
-                        {
-                            _plex.RefreshSectionAsync(moveOp.PlexSection, moveOp.Destination).FireForget(_logger);
-                            _jDownloader.RemoveDownloadPackageAsync(Path.GetFileName(moveOp.Source)).FireForget(_logger);
-                        });
-
-                        moveOp.CurrentState = FileMoveState.Success;
+                        moveOp.PerformOperation(_jDownloader, _plex, _logger);
+                        moveOp.CurrentState = FileOperationState.Success;
                     }
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Move operation failed");
                         moveOp.ErrorMessage = ex.Message;
-                        moveOp.CurrentState = FileMoveState.Failed;
+                        moveOp.CurrentState = FileOperationState.Failed;
                     }
                     moveOp.Finished = DateTime.Now;
                 }
@@ -211,12 +194,12 @@ namespace MovieMoverCore.Services
             }
         }
 
-        public FileMoveState QueryState(FileMoveOperation fmo)
+        public FileOperationState QueryState(IFileOperation fo)
         {
             _allOperationsRWLock.EnterReadLock();
             try
             {
-                var op = _allOperations.FirstOrDefault(o => o.ID == fmo.ID);
+                var op = _allOperations.FirstOrDefault(o => o.ID == fo.ID);
                 if (op == null)
                 {
                     return op.CurrentState;
@@ -231,11 +214,11 @@ namespace MovieMoverCore.Services
     public class FileMover : IFileMover
     {
         private ILogger<FileMover> _logger;
-        private IFileMoveWorker _fileMoveWorker;
+        private IFileOperationsWorker _fileMoveWorker;
         private ISettings _settings;
         private IPlex _plex;
 
-        public FileMover(IFileMoveWorker fileMoveWorker, ILogger<FileMover> logger, ISettings settings, IPlex plex)
+        public FileMover(IFileOperationsWorker fileMoveWorker, ILogger<FileMover> logger, ISettings settings, IPlex plex)
         {
             _logger = logger;
             _fileMoveWorker = fileMoveWorker;
@@ -357,7 +340,7 @@ namespace MovieMoverCore.Services
             return Directory.EnumerateFileSystemEntries(_settings.Files_DownloadsPath).ToList();
         }
 
-        private bool IsDownloadNameLegal(string name, out string fullPath)
+        public bool IsDownloadNameLegal(string name, out string fullPath)
         {
             foreach (var entry in GetDownloadEntries())
             {

@@ -299,9 +299,33 @@ function moveMovies() {
     });
 }
 
+function removeDownloads() {
+    if (selectedCards.length === 0) {
+        $('#noDownloadsSelected').modal();
+        return;
+    }
+
+    var dto = [];
+    for (var i = 0; i < selectedCards.length; i++) {
+        dto.push(selectedCards[i]);
+    }
+    $.ajax({
+        url: '/Downloads?handler=Downloads',
+        type: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify(dto),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    })
+        .fail(function (xhr, textStatus, errorThrown) {
+            alert("Error adding delete job: " + xhr.responseText);
+        });
+}
+
 function getMoveOps() {
     $.ajax({
-        url: '/Downloads?handler=MoveStates',
+        url: '/Downloads?handler=FileOperationStates',
         type: 'GET',
         contentType: 'application/json',
     })
@@ -309,7 +333,7 @@ function getMoveOps() {
             var el = document.getElementById("moveOps");
             seasonData = JSON.parse(result);
             if (seasonData.length === 0) {
-                el.innerHTML = "<i>No pending move operations...</i>";
+                el.innerHTML = "<i>No pending operations...</i>";
             } else {
                 var str = '<ul  class="list-group list - group - flush">';
                 for (var i = 0; i < seasonData.length; i++) {
@@ -319,7 +343,7 @@ function getMoveOps() {
                     } else if (seasonData[i].CurrentState === "Failed") {
                         clattr = "danger";
                     }
-                    str += '<li id="fmo_' + seasonData[i].ID + '" class="list-group-item list-group-item-' + clattr + ' d-flex justify-content-between align-items-center">' + seasonData[i].Name + ": " + seasonData[i].CurrentState;
+                    str += '<li id="fmo_' + seasonData[i].ID + '" class="list-group-item list-group-item-' + clattr + ' d-flex justify-content-between align-items-center">' + seasonData[i].Value + ": " + seasonData[i].CurrentState;
                     if (clattr === "danger") {
                         str += " (" + seasonData[i].ErrorMessage + ")";
                     }

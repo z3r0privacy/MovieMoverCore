@@ -179,6 +179,13 @@ namespace MovieMoverCore.Services
             return new List<string>();
         }
 
+        public bool IsDownloadNameLegal(string name, out string fullPath)
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            fullPath = name;
+            return false;
+        }
+
         public bool ValidateSeriesPath(Series series, bool isNewEntry = false)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
@@ -186,7 +193,7 @@ namespace MovieMoverCore.Services
         }
     }
 
-    public class FileWorkerMock : IFileMoveWorker
+    public class FileWorkerMock : IFileOperationsWorker
     {
         private ILogger<FileWorkerMock> _logger;
         public FileWorkerMock(ILogger<FileWorkerMock> logger)
@@ -200,16 +207,22 @@ namespace MovieMoverCore.Services
             return false;
         }
 
-        public FileMoveState QueryState(FileMoveOperation fmo)
+        public FileOperationState QueryState(IFileOperation fo)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
-            return FileMoveState.Success;
+            return FileOperationState.Success;
         }
 
-        public List<FileMoveOperation> QueryStates()
+        public List<IFileOperation> QueryStates()
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
-            return new List<FileMoveOperation>();
+            return new List<IFileOperation>();
+        }
+
+        public FileDeleteOperation QueueDeleteOperation(string source)
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            return null;
         }
 
         public FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection)

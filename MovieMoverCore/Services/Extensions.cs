@@ -51,10 +51,10 @@ namespace MovieMoverCore.Services
         {
             if (useMock)
             {
-                services.AddSingleton<IFileMoveWorker, FileWorkerMock>();
+                services.AddSingleton<IFileOperationsWorker, FileWorkerMock>();
                 return services.AddSingleton<IFileMover, FilesMoverMock>();
             }
-            services.AddSingleton<IFileMoveWorker, FileMoveWorker>();
+            services.AddSingleton<IFileOperationsWorker, FileOperationsWorker>();
             return services.AddSingleton<IFileMover, FileMover>();
         }
 
