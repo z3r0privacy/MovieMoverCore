@@ -10,6 +10,30 @@ function toggleSelection(cardId) {
     }
 }
 
+function selectAll() {
+    dlDiv = document.getElementById("downloadCards");
+    dlCards = dlDiv.querySelectorAll(":scope > div");
+    allSelected = true;
+    for (var i = 0; i < dlCards.length && allSelected; i++) {
+        var currentId = dlCards[i].firstElementChild.getAttribute("id");
+        var io = selectedCards.indexOf(currentId);
+        if (io === -1) {
+            allSelected = false;
+        }
+    }
+
+    var shouldSelect = !allSelected;
+    for (var i = 0; i < dlCards.length; i++) {
+        var currentId = dlCards[i].firstElementChild.getAttribute("id");
+        var io = selectedCards.indexOf(currentId);
+        if (io === -1 && shouldSelect) {
+            toggleSelection(currentId);
+        } else if (io !== -1 && !shouldSelect) {
+            toggleSelection(currentId);
+        }
+    }
+}
+
 function getDownloadData() {
     $.ajax({
         url: '/Downloads?handler=Downloads',

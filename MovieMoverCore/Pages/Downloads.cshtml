@@ -29,7 +29,7 @@
         <div class="col-12">
             <h3 style="display: inline">Downloads</h3>
             <button type="button" id="btnRestart" style="border-top-width: 0px;padding-top: 0px;margin-bottom: 8px; visibility:hidden" class="btn btn-primary btn-sm ml-5" onclick="restartDownloads()">
-                <img src="/img/bootstrap-reboot.svg" style="">
+                <img src="~/img/bootstrap-reboot.svg" style="">
             </button>
             <span id="dlspeed" class="ml-2"></span>
         </div>
@@ -41,6 +41,9 @@
     </div>
     <div class="row">
         <div class="col-12 d-flex justify-content-center">
+            <button type="button" onclick="selectAll();" class="btn btn-secondary mx-2">
+                <img src="~/img/select_all.svg" />
+            </button>
             <input type="button" value="Movie" onclick="moveMovies();" class="btn btn-primary mx-2" />
             <input type="button" value="Series" onclick="showSeriesSelector();" class="btn btn-primary mx-2" />
             <input type="button" value="Delete" onclick="removeDownloads();" class="btn btn-danger mx-2" />
@@ -73,13 +76,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Select Series</h5>
-                <button type="button" class="close" data-dismiss="modal
-     *
-     *
-     *
-     *
-     *
-     * " aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
