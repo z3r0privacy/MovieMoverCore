@@ -102,10 +102,14 @@ namespace MovieMoverCore.Models
         [JsonPropertyName("sourceUrl")]
         public string SourceUrl { get; set; }
 
-        public JD_AddLinks_Request_Params(string packageName, List<string> links)
+        public JD_AddLinks_Request_Params(string packageName, List<string> links, string downloadPath)
         {
             PackageName = packageName;
             Links = links.Select(l => HttpUtility.UrlEncode(l)).Aggregate((s1, s2) => s1 + Environment.NewLine + s2);
+            if (!string.IsNullOrEmpty(downloadPath))
+            {
+                DestinationFolder = downloadPath;
+            }
         }
     }
 

@@ -969,7 +969,7 @@ namespace MovieMoverCore.Services
         {
             try
             {
-                var requestData = new JD_AddLinks_Request_Params(name, links);
+                var requestData = new JD_AddLinks_Request_Params(name, links, _settings.JD_DownloadPath);
                 
                 var response = await CallDeviceAsync<JD_AddLinks_Response>("/linkgrabberv2/addLinks", requestData);
                 return (JDState.Ready, response.Id);

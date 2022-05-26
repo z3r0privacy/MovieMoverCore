@@ -40,6 +40,8 @@ ENV JD_Method=direct
 ENV JD_My_ApiPath=https://api.jdownloader.org
 ENV JD_PreferredClient=
 ENV JD_MaxRefreshInterval=2000
+# C:\\Path\\to\download\\<jd:packagename> or /path/to/download/<jd:packagename>
+ENV JD_DownloadPath=
 
 # Secrets here
 ENV PLEX_ApiToken=
