@@ -9,3 +9,5 @@
 - autodownload
 - middleware showing errors (a.k.a. jdownloader errors)
 - adding download all / remove all in queried packages
+Download of File with no directory -> .part extension. ==> Mapping
+Restart-Download -> change to autoresetevent
