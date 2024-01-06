@@ -75,6 +75,7 @@ namespace MovieMoverCore.Services
         public HistoryCollection()
         {
             _histories = [];
+            _histColRWLock = new ReaderWriterLockSlim();
         }
 
         public IHistory<TElement> GetHistory(string name)
