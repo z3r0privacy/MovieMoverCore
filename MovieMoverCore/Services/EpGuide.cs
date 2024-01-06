@@ -65,7 +65,7 @@ namespace MovieMoverCore.Services
             [Ignore]
             public DateTime AirDate => _airDate.AddDays(1);
             [Ignore]
-            public bool CanParseDate => DateTime.TryParseExact(AirdateStr, _dateFormat, CultureInfo.GetCultureInfo("en-US"), DateTimeStyles.None, out _airDate);
+            public bool CanParseDate => DateTime.TryParseExact(AirdateStr, _dateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out _airDate);
         }
 
         private ISettings _settings;
