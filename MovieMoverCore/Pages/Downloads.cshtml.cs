@@ -19,6 +19,8 @@ namespace MovieMoverCore.Pages
         private IFileOperationsWorker _fileOperationsWorker;
         private IDatabase _database;
         private IJDownloader _jDownloader;
+        private IHistoryCollection<List<string>> _historyCollection;
+        private readonly string _urlHistory = "HISTORY_URL_LIST";
 
 
         private static string _cardTemplateDownloads = @"
@@ -51,12 +53,13 @@ namespace MovieMoverCore.Pages
 
         public int RefreshRate { get; }
 
-        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileOperationsWorker fileMoveWorker, IJDownloader jDownloader, ISettings settings)
+        public DownloadsModel (IFileMover fileMover, IDatabase database, IFileOperationsWorker fileMoveWorker, IJDownloader jDownloader, ISettings settings, IHistoryCollection<List<string>> historyCollection)
         {
             _fileMover = fileMover;
             _database = database;
             _fileOperationsWorker = fileMoveWorker;
             _jDownloader = jDownloader;
+            _historyCollection = historyCollection;
             RefreshRate = settings.JD_MaxRefreshInterval;
         }
 
@@ -227,6 +230,27 @@ namespace MovieMoverCore.Pages
             return new JsonResult(JsonSerializer.Serialize(list));
         }
 
+        public IActionResult OnGetDownloadUrlHistory()
+        {
+            var hist = _historyCollection.GetHistory(_urlHistory).Items;
+            var values = hist.Select(e => new
+            {
+                Created = e.Item1.ToUnixTime(),
+                Data = e.Item2
+            }).ToList();
+            return new JsonResult(values);
+        }
+        public IActionResult OnPostTestUrl([FromBody] string urls)
+        {
+            if (ModelState.IsValid)
+            {
+                var list = urls.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList();
+                _historyCollection.GetHistory(_urlHistory).Add(list);
+                return new OkResult();
+            }
+            return new BadRequestResult();
+        }
+
         public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] List<long> uuids)
         {
             if (ModelState.IsValid && await _jDownloader.StartPackageDownloadAsync(uuids))
@@ -241,6 +265,7 @@ namespace MovieMoverCore.Pages
             if (ModelState.IsValid)
             {
                 var list = links.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList();
+                _historyCollection.GetHistory(_urlHistory).Add(list);
                 if (await _jDownloader.AddDownloadLinksAsync(list))
                 {
                     return new OkResult();

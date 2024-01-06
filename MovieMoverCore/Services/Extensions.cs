@@ -112,9 +112,19 @@ namespace MovieMoverCore.Services
             return services.AddSingleton<IJDownloader, JDownloader>();
         }
 
+        public static IServiceCollection UseHistory(this IServiceCollection services)
+        {
+            return services.AddSingleton(typeof(IHistoryCollection<>), typeof(HistoryCollection<>));
+        }
         public static void FireForget<T>(this Task task, ILogger<T> logger)
         {
             task.ContinueWith(t => logger.LogWarning(t.Exception, "Fire-And-Forget action failed"), TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        public static long ToUnixTime(this DateTime dateTime)
+        {
+            var timeSpan = (dateTime - new DateTime(1970, 1, 1, 0, 0, 0));
+            return (long)timeSpan.TotalSeconds;
         }
     }
 }

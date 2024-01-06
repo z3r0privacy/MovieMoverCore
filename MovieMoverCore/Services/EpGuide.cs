@@ -109,10 +109,13 @@ namespace MovieMoverCore.Services
                 {
                     _logger.LogInformation("Download AllShows.txt file");
                     var csv_raw = await AcquireCsv(_settings.EpGuide_AllShows);
-                    using var csv = new CsvReader(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(csv_raw))), CultureInfo.InvariantCulture);
-                    csv.Configuration.Delimiter = ",";
-                    csv.Configuration.HasHeaderRecord = false; // somehow does not work
-                    csv.Read(); // skip header row
+                    var csv_config = new CsvConfiguration(CultureInfo.InvariantCulture)
+                    {
+                        Delimiter = ",",
+                        HasHeaderRecord = false
+                    };
+                    using var csv = new CsvReader(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(csv_raw))), csv_config);
+                    // csv.Read(); // skip header row
                     while (csv.Read())
                     {
                         var title = csv.GetField<string>(1);
@@ -161,8 +164,10 @@ namespace MovieMoverCore.Services
             using var sr = new StreamReader(memStream);
             try
             {
-                using var csv = new CsvReader(sr, CultureInfo.InvariantCulture);
-                csv.Configuration.Delimiter = ",";
+                using var csv = new CsvReader(sr, new CsvConfiguration(CultureInfo.InvariantCulture)
+                {
+                    Delimiter = ","
+                });
                 var records = csv.GetRecords<EpCsv>();
 
                 foreach (var r in records)

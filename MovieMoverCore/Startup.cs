@@ -35,6 +35,7 @@ namespace MovieMoverCore
             services.UseSubtitles();
             services.UseCache();
             services.UseJDownloader();
+            services.UseHistory();
 
             //services.UseSettings();
             //services.UseDatabase(true);
