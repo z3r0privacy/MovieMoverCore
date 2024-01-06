@@ -240,16 +240,6 @@ namespace MovieMoverCore.Pages
             }).ToList();
             return new JsonResult(values);
         }
-        public IActionResult OnPostTestUrl([FromBody] string urls)
-        {
-            if (ModelState.IsValid)
-            {
-                var list = urls.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList();
-                _historyCollection.GetHistory(_urlHistory).Add(list);
-                return new OkResult();
-            }
-            return new BadRequestResult();
-        }
 
         public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] List<long> uuids)
         {
