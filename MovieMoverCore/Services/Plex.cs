@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -29,25 +30,32 @@ namespace MovieMoverCore.Services
     {
         private readonly ISettings _settings;
         private readonly ILogger<Plex> _logger;
+        private readonly HttpClientHandler _httpClientHandler;
 
         public Plex(ISettings settings, ILogger<Plex> logger)
         {
             _logger = logger;
             _settings = settings;
-            _settings.RegisterCertificateValidationCallback((object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) =>
+            _httpClientHandler = new HttpClientHandler()
             {
-                if (sslPolicyErrors == SslPolicyErrors.RemoteCertificateNameMismatch)
+                ServerCertificateCustomValidationCallback = CertificateCheck
+            };
+        }
+
+        private bool CertificateCheck(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None)
+            {
+                return true;
+            }
+            if (sender is HttpRequestMessage hrm)
+            {
+                if (hrm.RequestUri.AbsoluteUri.StartsWith(_settings.Plex_BaseUrl))
                 {
-                    if (sender is HttpWebRequest wr)
-                    {
-                        if (wr.Address.ToString().StartsWith(_settings.Plex_BaseUrl))
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
-                return false;
-            });
+            }
+            return false;
         }
 
         public string GetSettingsInfo()
@@ -70,10 +78,13 @@ namespace MovieMoverCore.Services
             //_logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
             //var epsData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
 
-            var wc = new WebClient();
+            var hc = new HttpClient(_httpClientHandler);
+            // var wc = new WebClient();
             var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.PlexId}/allLeaves?X-Plex-Token={{0}}";
             _logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
-            var epsData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
+            var response = await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
+            var epsData = await response.Content.ReadAsStringAsync();
+            //var epsData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
 
             var xml = new XmlDocument();
             xml.LoadXml(epsData);
@@ -117,19 +128,24 @@ namespace MovieMoverCore.Services
 
             _logger.LogDebug("Refreshing a section using " + query, "***");
 
-            var wc = new WebClient();
-            await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
+            var hc = new HttpClient(_httpClientHandler);
+            await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
+            //var wc = new WebClient();
+            //await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
         }
 
         public async Task<List<(string id, string name)>> GetSeriesNamesAsync()
         {
-            var wc = new WebClient();
+            var hc = new HttpClient(_httpClientHandler);
+            //var wc = new WebClient();
             var queryString = $"{_settings.Plex_BaseUrl}library/sections/{_settings.Plex_SeriesSectionId}/all?X-Plex-Token={{0}}";
             _logger.LogDebug("Querying series from Plex using " + queryString, "***");
 
-            var data = await wc.DownloadStringTaskAsync(
-                string.Format(queryString, _settings.Plex_ApiToken)
-                );
+            var response = await hc.GetAsync(string.Format(queryString, _settings.Plex_ApiToken));
+            var data = await response.Content.ReadAsStringAsync();
+            //var data = await wc.DownloadStringTaskAsync(
+            //    string.Format(queryString, _settings.Plex_ApiToken)
+            //    );
             var xml = new XmlDocument();
             xml.LoadXml(data);
             return xml.DocumentElement.ChildNodes.Cast<XmlNode>().Select(n => 
@@ -139,10 +155,13 @@ namespace MovieMoverCore.Services
 
         public async Task<string> GetFilePathOfEpisode(Series series, int season, int episode)
         {
-            var wc = new WebClient();
+            var hc = new HttpClient(_httpClientHandler);
+            //var wc = new WebClient();
             var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.PlexId}/allLeaves?X-Plex-Token={{0}}";
             _logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
-            var epData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
+            var response = await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
+            var epData = await response.Content.ReadAsStringAsync();
+            //var epData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
 
             var xml = new XmlDocument();
             xml.LoadXml(epData);

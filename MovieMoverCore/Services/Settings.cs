@@ -163,8 +163,10 @@ namespace MovieMoverCore.Services
 
         }
 
+        [Obsolete]
         public void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack)
         {
+            _logger.LogError("Does not work anymore, use HttpClientHandler");
             _customValidators.Add(callBack);
             _logger.LogDebug("A new callback for certificate validation callbacks has been added");
         }

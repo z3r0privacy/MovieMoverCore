@@ -383,6 +383,7 @@ function getMoveOps() {
         })
         .fail(function (xhr, textStatus, errorThrown) {
             console.log("Error refreshing move state: " + xhr.responseText);
+            setTimeout(getMoveOps, 1000);
         });
 }
 
@@ -416,6 +417,43 @@ function restartDownloads() {
     }).fail(function (xhr, textStatus, errorThrown) {
             console.log("Error restarting downloads: " + xhr.responseText);
         });
+}
+
+function showHistory() {
+    /*
+        <div class="card" style="margin-bottom:10px">
+            <div class="card-header">06.01.2024 18:18</div>
+            <ul class="list-group list-group-flush" style="font-size:smaller">
+                <li class="list-group-item">
+                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1<br>
+                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1<br>
+                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1
+                </li>
+            </ul>
+        </div>
+    */
+    $.ajax({
+        url: '/Downloads?handler=DownloadUrlHistory',
+        type: 'GET',
+    }).done(function (hist) {
+        modhtml = "";
+        for (var i = 0; i < hist.length; i++) {
+            createdDate = new Date();
+            createdDate.setTime(hist[i].created*1000);
+            histhtml = '<div class="card" style="margin-bottom:10px"><div class="card-header">';
+            histhtml += createdDate.toUTCString();
+            histhtml += '</div><ul class="list-group list-group-flush" style="font-size:smaller"><li class="list-group-item">';
+            for (var j = 0; j < hist[i].data.length; j++) {
+                histhtml += hist[i].data[j] + "<br />";
+            }
+            histhtml += '</li></ul></div>';
+            modhtml += histhtml;
+        }
+        document.getElementById("historymodal_body").innerHTML = modhtml;
+        $('#historyModal').modal();
+    }).fail(function (xhr, textStatus, errorThrown) {
+        alert(xhr.responseText);
+    });
 }
 
 getDownloadData();

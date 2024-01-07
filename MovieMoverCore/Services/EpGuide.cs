@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,9 +86,13 @@ namespace MovieMoverCore.Services
 
         private async Task<string> AcquireCsv(string url)
         {
-            var wc = new WebClient();
-            wc.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:96.0) Gecko/20100101 Firefox/96.0");
-            var htmlresponse = await wc.DownloadStringTaskAsync(url);
+            var hc = new HttpClient();
+            hc.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0");
+            var response = await hc.GetAsync(url);
+            var htmlresponse = await response.Content.ReadAsStringAsync();
+            //var wc = new WebClient();
+            //wc.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0");
+            //var htmlresponse = await wc.DownloadStringTaskAsync(url);
             var markerStart = "<pre>";
             var markerStop = "</pre>";
             var start = htmlresponse.IndexOf(markerStart) + markerStart.Length;

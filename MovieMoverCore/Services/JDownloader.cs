@@ -64,6 +64,7 @@ namespace MovieMoverCore.Services
         private string _appKey;
 
         private string _apiBase;
+        private JsonSerializerOptions _jsonSerializationOptions;
 
         private DateTime? _timeOut = null;
 
@@ -89,6 +90,10 @@ namespace MovieMoverCore.Services
             _CurrentState = JDState.NotStarted;
             LastDownloadStates = new List<JD_FilePackage>();
             _apiBase = _settings.JD_Use_Direct ? _settings.JD_ApiPath : _settings.JD_My_ApiPath;
+            _jsonSerializationOptions = new JsonSerializerOptions()
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
         }
 
         public void Test()
@@ -847,10 +852,7 @@ namespace MovieMoverCore.Services
             var requestParams = "";
             if (queryParams != null && queryParams.Length != 0)
             {
-                requestParams = queryParams.Select(p => JsonSerializer.Serialize(p, new JsonSerializerOptions
-                {
-                    IgnoreNullValues = true
-                })).Aggregate((s1, s2) => s1 + "&" + s2);
+                requestParams = queryParams.Select(p => JsonSerializer.Serialize(p, _jsonSerializationOptions)).Aggregate((s1, s2) => s1 + "&" + s2);
             }
 
             var url = _apiBase + action;
@@ -871,16 +873,13 @@ namespace MovieMoverCore.Services
                 Url = action
             };
             postData.Params.AddRange(
-                queryParams.Select(o => JsonSerializer.Serialize(o, new JsonSerializerOptions() { IgnoreNullValues = true }))
+                queryParams.Select(o => JsonSerializer.Serialize(o, _jsonSerializationOptions))
                 );
 
             var query = $"/t_{_sessionToken}_{_selectedDeviceId}{postData.Url}";
             query = _apiBase + query; //CreateQuery(query, _deviceEncryptionToken, true);
 
-            var body = JsonSerializer.Serialize(postData, new JsonSerializerOptions
-            {
-                IgnoreNullValues = true
-            });
+            var body = JsonSerializer.Serialize(postData, _jsonSerializationOptions);
             var bodyEnc = Encrypt(body, _deviceEncryptionToken);
             var content = new StringContent(bodyEnc, Encoding.UTF8, "application/json");
 
