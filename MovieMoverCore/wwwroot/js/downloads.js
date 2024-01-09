@@ -268,7 +268,6 @@ function addLinks() {
         });
 }
 
-
 function updateSelectedSeason() {
     document.getElementById("season").value = $seasonData[document.getElementById("seriesSelector").selectedIndex].LastSelectedSeason; // document.getElementById("seriesSelector").value.tag;
 }
@@ -420,18 +419,6 @@ function restartDownloads() {
 }
 
 function showHistory() {
-    /*
-        <div class="card" style="margin-bottom:10px">
-            <div class="card-header">06.01.2024 18:18</div>
-            <ul class="list-group list-group-flush" style="font-size:smaller">
-                <li class="list-group-item">
-                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1<br>
-                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1<br>
-                    https://rapidgator.net/file/98d5cb2fc187d3234c923a62de2ed0f1
-                </li>
-            </ul>
-        </div>
-    */
     $.ajax({
         url: '/Downloads?handler=DownloadUrlHistory',
         type: 'GET',
@@ -446,7 +433,9 @@ function showHistory() {
             for (var j = 0; j < hist[i].data.length; j++) {
                 histhtml += hist[i].data[j] + "<br />";
             }
-            histhtml += '</li></ul></div>';
+            histhtml += '</li><li class="list-group-item"><a href="#" onclick="resubmitLinks(';
+            histhtml += hist[i].id;
+            histhtml += ');">Resubmit</a></li></ul></div>';
             modhtml += histhtml;
         }
         document.getElementById("historymodal_body").innerHTML = modhtml;
@@ -455,6 +444,22 @@ function showHistory() {
         alert(xhr.responseText);
     });
 }
+
+function resubmitLinks(hist_id) {
+    $.ajax({
+        url: '/Downloads?handler=ResubmitLinks',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(hist_id),
+        headers: {
+            RequestVerificationToken: document.getElementById('RequestVerificationToken').value
+        }
+    }).fail(function (xhr, textStatus, errorThrown) {
+        console.log("Error resubmitting links: " + xhr.responseText);
+        alert("Error resubmitting links: " + xhr.responseText);
+    });
+}
+
 
 getDownloadData();
 getMoveOps();

@@ -236,9 +236,30 @@ namespace MovieMoverCore.Pages
             var values = hist.Select(e => new
             {
                 Created = e.Item1.ToUnixTime(),
-                Data = e.Item2
+                Data = e.Item2,
+                Id = e.Item3
             }).ToList();
             return new JsonResult(values);
+        }
+
+        public async Task<IActionResult> OnPostResubmitLinks([FromBody] int histId)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var dllinks = _historyCollection.GetHistory(_urlHistory)[histId];
+                    if (await _jDownloader.AddDownloadLinksAsync(dllinks.Item2))
+                    {
+                        return new OkResult();
+                    }
+                    return StatusCode(500);
+                } catch (KeyNotFoundException)
+                {
+                    return new NotFoundResult();
+                }
+            }
+            return new BadRequestResult();
         }
 
         public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] List<long> uuids)
