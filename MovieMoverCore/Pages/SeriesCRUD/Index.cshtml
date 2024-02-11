@@ -2,10 +2,17 @@
 @model MovieMoverCore.Pages.SeriesCRUD.IndexModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Maintenance";
 }
 
-<h1>Index</h1>
+<h1>Maintenance</h1>
+
+<h4>JDownloader</h4>
+<p>
+    <a href="#" onclick="invokeJDUpdateSearch();">Invoke Update search</a> <span id="state_serachjdupdate"></span>
+</p>
+<p></p>
+<h4>Series Data</h4>
 
 <p>
     <a asp-page="Create">Create New</a>

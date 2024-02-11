@@ -240,9 +240,24 @@ namespace MovieMoverCore.Services
             _logger = logger;
             _logger.LogInformation("Created instance of " + GetType().ToString());
         }
+
+        public JDState GetCurrentState() => JDState.Ready;
+
         public List<JD_FilePackage> LastDownloadStates => new List<JD_FilePackage>();
 
         public Task<bool> AddDownloadLinksAsync(List<string> links, string packageName = null)
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            return Task.FromResult(false);
+        }
+
+        public Task<bool> CheckForUpdate()
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            return Task.FromResult(false);
+        }
+
+        public Task<bool> IsNewUpdateAvailable()
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
             return Task.FromResult(false);
@@ -298,6 +313,12 @@ namespace MovieMoverCore.Services
         public void Test()
         {
             throw new InvalidOperationException();
+        }
+
+        public Task<bool> UpdateAndRestart()
+        {
+            _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
+            return Task.FromResult(false);
         }
     }
 

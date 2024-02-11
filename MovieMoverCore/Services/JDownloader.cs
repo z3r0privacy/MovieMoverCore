@@ -15,6 +15,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -45,6 +46,11 @@ namespace MovieMoverCore.Services
         Task<bool> RemoveQueriedDownloadLinksAsync(List<long> uuids);
         Task<(bool isDownloading, int speed)> QueryDownloadControllerState();
         Task<bool> RestartDownloads();
+        Task<bool> CheckForUpdate();
+        Task<bool> IsNewUpdateAvailable();
+        Task<bool> UpdateAndRestart();
+
+        JDState GetCurrentState();
     }
 
     public class JDownloader : IJDownloader
@@ -95,6 +101,8 @@ namespace MovieMoverCore.Services
                 DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             };
         }
+
+        public JDState GetCurrentState() => _CurrentState;
 
         public void Test()
         {
@@ -409,6 +417,57 @@ namespace MovieMoverCore.Services
             {
                 _ssRestartDownloads.Release();
             }
+        }
+
+        public async Task<bool> CheckForUpdate()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var state = await Device_CheckForUpdate();
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not initiate update check on JDownloader. Current state: {_CurrentState}");
+            }
+            return state == JDState.Ready;
+        }
+
+        public async Task<bool> IsNewUpdateAvailable()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            var (state, updateAvailable) = await Device_IsNewUpdateAvailable();
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not get update status from JDownloader. Current state: {_CurrentState}");
+            }
+            return updateAvailable;
+        }
+
+        public async Task<bool> UpdateAndRestart()
+        {
+            if (!IsReady())
+            {
+                _logger.LogWarning(_lastException, $"Could not get ready. Current state: {_CurrentState}");
+                return false;
+            }
+            if (!await IsNewUpdateAvailable())
+            {
+                // no update available, prevent unnecessary restart
+                _logger.LogInformation(_lastException, $"No update available, do not issue restart command");
+                return false;
+            }
+            var state = await Device_UpdateAndRestart();
+            if (state != JDState.Ready)
+            {
+                _logger.LogWarning(_lastException, $"Could not initiate update on JDownloader. Current state: {_CurrentState}");
+            }
+            return state == JDState.Ready;
         }
         #endregion
 
@@ -1137,6 +1196,48 @@ namespace MovieMoverCore.Services
             {
                 _lastException = ex;
                 return (JDState.Error, false);
+            }
+        }
+
+        private async Task<JDState> Device_CheckForUpdate()
+        {
+            try
+            {
+                var res = await CallDeviceAsync<string>("/update/runUpdateCheck");
+                return JDState.Ready;
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return JDState.Error;
+            }
+        }
+
+        private async Task<(JDState, bool)> Device_IsNewUpdateAvailable()
+        {
+            try
+            {
+                var res = await CallDeviceAsync<bool>("/update/isUpdateAvailable");
+                return (JDState.Ready, res);
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return (JDState.Error, false);
+            }
+        }
+
+        private async Task<JDState> Device_UpdateAndRestart()
+        {
+            try
+            {
+                var res = await CallDeviceAsync<string>("/update/restartAndUpdate");
+                return JDState.Ready;
+            }
+            catch (Exception ex)
+            {
+                _lastException = ex;
+                return JDState.Error;
             }
         }
         #endregion
