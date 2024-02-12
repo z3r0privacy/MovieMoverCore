@@ -71,6 +71,7 @@ function getDownloadControllerStatus() {
                 document.getElementById("dlspeed").innerHTML = "Downloading: " + state.speed + " " + state.unit;
                 document.getElementById("btnRestart").style.visibility = "visible";
             } else {
+                document.getElementById("dlspeed").innerHTML = "";
                 document.getElementById("btnRestart").style.visibility = "hidden";
             }
         })
