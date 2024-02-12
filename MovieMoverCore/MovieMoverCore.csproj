@@ -15,9 +15,13 @@
 
   <ItemGroup>
     <Compile Remove="DockerVolumes\AppData\NewFolder\**" />
+    <Compile Remove="DockerVolumes\data\NewFolder\**" />
     <Content Remove="DockerVolumes\AppData\NewFolder\**" />
+    <Content Remove="DockerVolumes\data\NewFolder\**" />
     <EmbeddedResource Remove="DockerVolumes\AppData\NewFolder\**" />
+    <EmbeddedResource Remove="DockerVolumes\data\NewFolder\**" />
     <None Remove="DockerVolumes\AppData\NewFolder\**" />
+    <None Remove="DockerVolumes\data\NewFolder\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,8 +38,9 @@
 
   <ItemGroup>
     <Folder Include="DockerVolumes\AppData\" />
-    <Folder Include="DockerVolumes\data\NewFolder\" />
-    <Folder Include="DockerVolumes\data\Series\" />
+    <Folder Include="DockerVolumes\data\downloads\" />
+    <Folder Include="DockerVolumes\data\movies\" />
+    <Folder Include="DockerVolumes\data\series\" />
   </ItemGroup>
 
 </Project>

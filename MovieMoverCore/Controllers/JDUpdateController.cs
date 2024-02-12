@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace MovieMoverCore.Controllers
 {
     [ApiController]
-    [Route("/api/{controller}/{action=Index}")]
+    [Route("/api/{controller}/{action}")]
     public class JDUpdateController : Controller
     {
 
@@ -15,12 +15,6 @@ namespace MovieMoverCore.Controllers
         public JDUpdateController(IJDownloader jDownloader)
         {
             _jDownloader = jDownloader;
-        }
-
-        [HttpGet]
-        public string Index()
-        {
-            return "Hello World - 42";
         }
 
         [HttpGet]

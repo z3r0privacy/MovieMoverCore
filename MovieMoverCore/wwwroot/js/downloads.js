@@ -62,14 +62,13 @@ function getDownloadData() {
 
 function getDownloadControllerStatus() {
     $.ajax({
-        url: '/Downloads?handler=DownloadControllerState',
+        url: '/api/Downloads/ControllerStatus',
         type: 'GET',
         contentType: 'application/json',
     })
-        .done(function (result) {
-            var val = JSON.parse(result);
-            document.getElementById("dlspeed").innerHTML = val;
-            if (val.length > 0) {
+        .done(function (state) {
+            if (state.downloading === true) {
+                document.getElementById("dlspeed").innerHTML = "Downloading: " + state.speed + " " + state.unit;
                 document.getElementById("btnRestart").style.visibility = "visible";
             } else {
                 document.getElementById("btnRestart").style.visibility = "hidden";
@@ -217,20 +216,19 @@ function showSeriesSelector() {
     }
 
     $.ajax({
-        url: '/Downloads?handler=Series',
+        url: '/api/Video/Series',
         type: 'GET',
         contentType: 'application/json',
         async: true
     })
-        .done(function (result) {
-            data = JSON.parse(result);
+        .done(function (data) {
             selector = document.getElementById("seriesSelector");
             selector.options.length = 0;
             for (i = 0; i < data.length; i++) {
-                selector.options[i] = new Option(data[i].Name, data[i].Id);
-                selector.options[i].tag = data[i].LastSelectedSeason;
+                selector.options[i] = new Option(data[i].name, data[i].id);
+                selector.options[i].tag = data[i].lastSelectedSeason;
             }
-            document.getElementById("season").value = data[0].LastSelectedSeason;
+            document.getElementById("season").value = data[0].lastSelectedSeason;
             document.getElementById("seriesMoverName").innerText = selectedCards[0];
             data.forEach(d => $seasonData.push(d));
             $('#seriesSelectorModal').modal();
@@ -284,7 +282,7 @@ function moveSeries() {
     }
 
     $.ajax({
-        url: '/Downloads?handler=MoveSeries',
+        url: '/api/Video/MoveToSeries',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(dto),
@@ -309,7 +307,7 @@ function moveMovies() {
     }
 
     $.ajax({
-        url: '/Downloads?handler=MoveMovies',
+        url: '/api/Video/MoveToMovies',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(dto),
@@ -318,8 +316,8 @@ function moveMovies() {
         }
     })
         .fail(function (xhr, textStatus, errorThrown) {
-        alert("Error adding move job: " + xhr.responseText);
-    });
+            alert("Error adding move job: " + xhr.responseText);
+        });
 }
 
 function removeDownloads() {
@@ -333,7 +331,7 @@ function removeDownloads() {
         dto.push(selectedCards[i]);
     }
     $.ajax({
-        url: '/Downloads?handler=Downloads',
+        url: '/api/Downloads/Remove',
         type: 'DELETE',
         contentType: 'application/json',
         data: JSON.stringify(dto),

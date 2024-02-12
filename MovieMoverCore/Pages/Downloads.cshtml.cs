@@ -117,86 +117,27 @@ namespace MovieMoverCore.Pages
 
         public IActionResult OnGetSeries()
         {
-            var data = _database.GetSeries(s => !s.IsFinished).OrderBy(s => s.Name).Select(s => new
-            {
-                s.Id,
-                s.Name,
-                s.LastSelectedSeason
-            });
-            return new JsonResult(JsonSerializer.Serialize(data));
+            return BadRequest("Deprecated. Use GET /api/Video/Series");
         }
 
-        public async Task<IActionResult> OnGetDownloadControllerState()
+        public IActionResult OnGetDownloadControllerState()
         {
-            var (downloading, speed) = await _jDownloader.QueryDownloadControllerState();
-            if (!downloading)
-            {
-                return new JsonResult(JsonSerializer.Serialize(""));
-            }
-            var units = new string[] { "B", "KB", "MB", "GB" };
-            var unit = 0;
-            var speedF = (double)speed;
-            while (speedF > 1000 && unit < units.Length)
-            {
-                speedF /= 1000;
-                unit++;
-            }
-            return new JsonResult(JsonSerializer.Serialize($"Downloading: {speedF:0.00} {units[unit]}/s"));
+            return BadRequest("Deprected. Use ET /api/Downloads/ControllerStatus");
         }
 
-        public async Task<IActionResult> OnPostMoveSeriesAsync([FromBody] MoveToSeries moveToSeries)
+        public IActionResult OnPostMoveSeries([FromBody] MoveToSeries moveToSeries)
         {
-            var series = _database.GetSeries(moveToSeries.SeriesId);
-            if (series == null)
-            {
-                return BadRequest("The requested series does not exist");
-            }
-
-            if (moveToSeries.Season <= 0)
-            {
-                return BadRequest("Season must be greater than 0");
-            }
-
-            var states = new List<FileMoveOperation>();
-            foreach (var dl in moveToSeries.Downloads)
-            {
-                var s = _fileMover.CreateSeriesMoveOperation(dl, series, moveToSeries.Season);
-                states.Add(s);
-            }
-
-            series.LastSelectedSeason = moveToSeries.Season;
-            _database.UpdateSeries(series);
-            await _database.SaveSeriesChangesAsync();
-
-            return new OkResult();
+            return BadRequest("Deprecated. Use POST /api/Video/MoveToSeries");
         }
 
         public IActionResult OnPostMoveMovies([FromBody] string[] moveToMovies)
         {
-            var states = new List<FileMoveOperation>();
-            foreach (var dl in moveToMovies)
-            {
-                var s = _fileMover.CreateMoviesMoveOperation(dl);
-                states.Add(s);
-            }
-
-            return new OkResult();
+            return BadRequest("Deprecated. Use POST /api/Videos/MoveToMovies");
         }
 
         public IActionResult OnDeleteDownloads([FromBody] string[] deleteDownloads)
         {
-            bool errOccured = false;
-            foreach (var dl in deleteDownloads)
-            {
-                if (_fileMover.IsDownloadNameLegal(dl, out var fullPath)) {
-                    _fileOperationsWorker.QueueDeleteOperation(fullPath);
-                } else
-                {
-                    errOccured = true;
-                }
-            }
-            
-            return !errOccured ? new OkResult() : new NotFoundResult();
+            return BadRequest("Deprecated. Use DELETE /api/Downloads/Remove");
         }
 
         public IActionResult OnGetFileOperationStates()
