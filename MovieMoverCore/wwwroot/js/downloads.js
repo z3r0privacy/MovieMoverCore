@@ -83,13 +83,13 @@ function getDownloadControllerStatus() {
 }
 
 var templatePendingPackage = `
-<div id="{1}" class="col-md-4 my-2">
+<div id="{id}" class="col-md-4 my-2">
     <div class="card" style="width: 18rem;">
         <div class="card-body">
-            <h6 class="card-subtitle mb-2 text-muted">{0}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">{name} ({size} {unit})</h6>
             <div class="d-flex justify-content-center">
-                <input id="dlpkg_{1}" type="button" value="Download" onclick="startPackageDownload({1})" class="btn btn-primary mx-2">
-                <input id="rmpkg_{1}" type="button" value="Remove" onclick="removePackage({1})" class="btn btn-primary mx-2">
+                <input id="dlpkg_{id}" type="button" value="Download" onclick="startPackageDownload({id})" class="btn btn-primary mx-2">
+                <input id="rmpkg_{id}" type="button" value="Remove" onclick="removePackage({id})" class="btn btn-primary mx-2">
             </div>
         </div>
     </div>
@@ -98,24 +98,24 @@ var templatePendingPackage = `
 pendingPackages = []
 function getPackagesData() {
     $.ajax({
-        url: '/Downloads?handler=PendingPackages',
+        url: '/api/Downloads/PendingPackages',
         type: 'GET',
         contentType: 'application/json',
     })
-        .done(function (result) {
+        .done(function (data) {
             //document.getElementById("pendingPackages").innerHTML = JSON.parse(result);
             var log = "";
-            var data = JSON.parse(result);
+            //var data = JSON.parse(result);
             var mainDiv = document.getElementById("pendingPackages");
             var existDiv = mainDiv.querySelectorAll(":scope > div");
             var idsPresent = [];
             for (var j = 0; existDiv && j < existDiv.length; j++) {
                 found = false;
                 for (var i = 0; !found && i < data.length; i++) {
-                    if (data[i].Id == existDiv[j].id) {
+                    if (data[i].id == existDiv[j].id) {
                         found = true;
-                        idsPresent.push(data[i].Id);
-                        log += "Keeping " + data[i].Id + ", ";
+                        idsPresent.push(data[i].id);
+                        log += "Keeping " + data[i].id + ", ";
                     }
                 }
                 if (!found) {
@@ -124,11 +124,15 @@ function getPackagesData() {
                 }
             }
             for (var i = 0; i < data.length; i++) {
-                if (!idsPresent.includes(data[i].Id)) {
+                if (!idsPresent.includes(data[i].id)) {
                     //var el = templatePendingPackage.format(data[i].Name, data[i].Id);
-                    var el = templatePendingPackage.replace(/\{0\}/g, data[i].Name).replace(/\{1\}/g, data[i].Id);
+                    var el = templatePendingPackage
+                        .replace(/\{name\}/g, data[i].name)
+                        .replace(/\{id\}/g, data[i].id)
+                        .replace(/\{size\}/g, data[i].size)
+                        .replace(/\{unit\}/g, data[i].unit);
                     mainDiv.innerHTML += el;
-                    log += "Adding " + data[i].Id + ", ";
+                    log += "Adding " + data[i].id + ", ";
                 }
             }
 
@@ -144,7 +148,7 @@ function getPackagesData() {
 
 function startPackageDownload(uuid) {
     $.ajax({
-        url: '/Downloads?handler=StartDownload',
+        url: '/api/Downloads/Start',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify([uuid]),
@@ -169,7 +173,7 @@ function startAllPackagesDownload() {
     }
 
     $.ajax({
-        url: '/Downloads?handler=StartDownload',
+        url: '/api/Downloads/Start',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(ids),
@@ -191,8 +195,8 @@ function removeAllPackages() {
 
 function removePackage(uuid) {
     $.ajax({
-        url: '/Downloads?handler=RemoveDownloadLinks',
-        type: 'POST',
+        url: '/api/Downloads/RemovePendingPackages',
+        type: 'DELETE',
         contentType: 'application/json',
         data: JSON.stringify([uuid]),
         headers: {
@@ -250,7 +254,7 @@ function addLinks() {
         return;
     }
     $.ajax({
-        url: '/Downloads?handler=AddDownloadLinks',
+        url: '/api/Downloads/AddUrls',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(text),
@@ -346,30 +350,30 @@ function removeDownloads() {
 
 function getMoveOps() {
     $.ajax({
-        url: '/Downloads?handler=FileOperationStates',
+        url: '/api/Video/FileOperationStates',
         type: 'GET',
         contentType: 'application/json',
     })
-        .done(function (result) {
+        .done(function (seasonData) {
             var el = document.getElementById("moveOps");
-            seasonData = JSON.parse(result);
+            //seasonData = JSON.parse(result);
             if (seasonData.length === 0) {
                 el.innerHTML = "<i>No pending operations...</i>";
             } else {
                 var str = '<ul  class="list-group list - group - flush">';
                 for (var i = 0; i < seasonData.length; i++) {
                     var clattr = "primary";
-                    if (seasonData[i].CurrentState === "Success") {
+                    if (seasonData[i].currentState === "Success") {
                         clattr = "success"
-                    } else if (seasonData[i].CurrentState === "Failed") {
+                    } else if (seasonData[i].currentState === "Failed") {
                         clattr = "danger";
                     }
-                    str += '<li id="fmo_' + seasonData[i].ID + '" class="list-group-item list-group-item-' + clattr + ' d-flex justify-content-between align-items-center">' + seasonData[i].Value + ": " + seasonData[i].CurrentState;
+                    str += '<li id="fmo_' + seasonData[i].id + '" class="list-group-item list-group-item-' + clattr + ' d-flex justify-content-between align-items-center">' + seasonData[i].value + ": " + seasonData[i].currentState;
                     if (clattr === "danger") {
-                        str += " (" + seasonData[i].ErrorMessage + ")";
+                        str += " (" + seasonData[i].errorMessage + ")";
                     }
                     if (clattr !== "primary") {
-                        str += '<span class="badge badge-' + clattr + ' badge-pill linkCursor" onclick="dismissFMO(' + seasonData[i].ID + ');">&times;</span>';
+                        str += '<span class="badge badge-' + clattr + ' badge-pill linkCursor" onclick="dismissFMO(' + seasonData[i].id + ');">&times;</span>';
                     }
                     str += "</li>";
                 }
@@ -386,7 +390,7 @@ function getMoveOps() {
 
 function dismissFMO(id) {
     $.ajax({
-        url: '/Downloads?handler=DismissFmo',
+        url: '/api/Video/DismissFmo',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(id),
@@ -405,7 +409,7 @@ function dismissFMO(id) {
 
 function restartDownloads() {
     $.ajax({
-        url: '/Downloads?handler=RestartDownloads',
+        url: '/api/Downloads/Restart',
         type: 'POST',
         contentType: 'application/json',
         headers: {
@@ -418,7 +422,7 @@ function restartDownloads() {
 
 function showHistory() {
     $.ajax({
-        url: '/Downloads?handler=DownloadUrlHistory',
+        url: '/api/Downloads/UrlHistory',
         type: 'GET',
     }).done(function (hist) {
         modhtml = "";
@@ -445,7 +449,7 @@ function showHistory() {
 
 function resubmitLinks(hist_id) {
     $.ajax({
-        url: '/Downloads?handler=ResubmitLinks',
+        url: '/api/Downloads/ResubmitUrls',
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify(hist_id),

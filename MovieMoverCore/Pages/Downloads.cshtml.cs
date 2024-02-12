@@ -37,19 +37,6 @@ namespace MovieMoverCore.Pages
 </div>
 ";
 
-        private static string _cardTemplatePackages = @"
-<div class=""col-md-4 my-2"">
-    <div class=""card"" style=""width: 18rem;"">
-        <div class=""card-body"">
-            <h6 class=""card-subtitle mb-2 text-muted"">{0}</h6>
-            <div class=""d-flex justify-content-center"">
-                <input id=""dlpkg_{1}"" type=""button"" value=""Download"" onclick=""startPackageDownload({1})"" class=""btn btn-primary mx-2"">
-                <input id=""rmpkg_{1}"" type=""button"" value=""Remove"" onclick=""removePackage({1})"" class=""btn btn-primary mx-2"">
-            </div>
-        </div>
-    </div>
-</div>
-";
 
         public int RefreshRate { get; }
 
@@ -142,117 +129,47 @@ namespace MovieMoverCore.Pages
 
         public IActionResult OnGetFileOperationStates()
         {
-            var states = _fileOperationsWorker.QueryStates().Select(s => new
-            {
-                Value = s.ToString(),
-                CurrentState = s.CurrentState.ToString(),
-                s.ErrorMessage,
-                s.ID
-            });
-            return new JsonResult(JsonSerializer.Serialize(states));
+            return BadRequest("Deprecated. Use GET /api/Video/FileOperationStates");
         }
 
-        public async Task<IActionResult> OnGetPendingPackagesAsync()
+        public IActionResult OnGetPendingPackages()
         {
-            var packages = _jDownloader.QueryCrawledPackagesAsync();
-            var sb = new StringBuilder();
-            var list = new List<object>();
-            foreach (var p in await packages)
-            {
-                var size = $"{(p.BytesTotal / (double)1_048_576_000):f1}"; // 1024*1024=1’048’576 * 1000 = 1’048’576’000 ==> ??? why
-                // --> JD propably calculates MBs (1024*1024) and then only moves the dot for displaying GB (therefore 1000)
-                sb.Append(string.Format(_cardTemplatePackages, $"{p.Name} ({size} GB)", p.UUID.ToString()));
-                list.Add(new
-                {
-                    Name = $"{p.Name} ({size} GB)",
-                    Id = p.UUID.ToString()
-                });
-            }
-            return new JsonResult(JsonSerializer.Serialize(list));
+            return BadRequest("Deprecated. Use GET /api/Downloads/PendingPackages");
         }
 
         public IActionResult OnGetDownloadUrlHistory()
         {
-            var hist = _historyCollection.GetHistory(_urlHistory).Items;
-            var values = hist.Select(e => new
-            {
-                Created = e.Item1.ToUnixTime(),
-                Data = e.Item2,
-                Id = e.Item3
-            }).ToList();
-            return new JsonResult(values);
+            return BadRequest("Deprecated. Use GET /api/Downloads/UrlHistory");
         }
 
-        public async Task<IActionResult> OnPostResubmitLinks([FromBody] int histId)
+        public IActionResult OnPostResubmitLinks([FromBody] int histId)
         {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var dllinks = _historyCollection.GetHistory(_urlHistory)[histId];
-                    if (await _jDownloader.AddDownloadLinksAsync(dllinks.Item2))
-                    {
-                        return new OkResult();
-                    }
-                    return StatusCode(500);
-                } catch (KeyNotFoundException)
-                {
-                    return new NotFoundResult();
-                }
-            }
-            return new BadRequestResult();
+            return BadRequest("Deprecated. Use POST /api/Downloads/ResubmitUrls");
         }
 
-        public async Task<IActionResult> OnPostStartDownloadAsync([FromBody] List<long> uuids)
+        public IActionResult OnPostStartDownload([FromBody] List<long> uuids)
         {
-            if (ModelState.IsValid && await _jDownloader.StartPackageDownloadAsync(uuids))
-            {
-                return new OkResult();
-            }
-            return new NotFoundResult();
+            return BadRequest("Deprecated. Use POST /api/Downloads/Start");
         }
 
-        public async Task<IActionResult> OnPostAddDownloadLinksAsync([FromBody] string links)
+        public IActionResult OnPostAddDownloadLinks([FromBody] string links)
         {
-            if (ModelState.IsValid)
-            {
-                var list = links.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).ToList();
-                _historyCollection.GetHistory(_urlHistory).Add(list);
-                if (await _jDownloader.AddDownloadLinksAsync(list))
-                {
-                    return new OkResult();
-                }
-                return StatusCode(500);
-            }
-            return new BadRequestResult();
+            return BadRequest("Deprecated. Use POST /api/Downloads/AddUrls");
         }
 
-        public async Task<IActionResult> OnPostRemoveDownloadLinksAsync([FromBody] List<long> uuids)
+        public IActionResult OnPostRemoveDownloadLinks([FromBody] List<long> uuids)
         {
-            if (ModelState.IsValid)
-            {
-                if (await _jDownloader.RemoveQueriedDownloadLinksAsync(uuids))
-                {
-                    return new OkResult();
-                }
-                return StatusCode(500);
-            }
-            return new BadRequestResult();
+            return BadRequest("Deprecated. Use DELETE /api/Downloads/RemovePendingPackages");
         }
 
         public IActionResult OnPostDismissFmo([FromBody] int id)
         {
-            if (ModelState.IsValid && _fileOperationsWorker.DismissState(id))
-            {
-                return new OkResult();
-            }
-            return new NotFoundResult();
+            return BadRequest("Deprecated. Use POST /api/Video/DismissFmo");
         }
 
-        public async Task<IActionResult> OnPostRestartDownloads()
+        public IActionResult OnPostRestartDownloads()
         {
-            var success = await _jDownloader.RestartDownloads();
-            return new JsonResult(JsonSerializer.Serialize(success));
+            return BadRequest("Deprecated. Use POST /api/Downloads/Restart");
         }
     }
 }

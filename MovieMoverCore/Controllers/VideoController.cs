@@ -18,12 +18,14 @@ namespace MovieMoverCore.Controllers
         private ILogger<VideoController> _logger;
         private IDatabase _database;
         private IFileMover _fileMover;
+        private IFileOperationsWorker _fileOperationsWorker;
 
-        public VideoController(ILogger<VideoController> logger, IDatabase database, IFileMover fileMover)
+        public VideoController(ILogger<VideoController> logger, IDatabase database, IFileMover fileMover, IFileOperationsWorker fileOperationsWorker)
         {
             _logger = logger;
             _database = database;
             _fileMover = fileMover;
+            _fileOperationsWorker = fileOperationsWorker;
         }
 
         [HttpGet]
@@ -33,8 +35,21 @@ namespace MovieMoverCore.Controllers
             return new JsonResult(data);
         }
 
+        [HttpGet]
+        public IActionResult FileOperationStates()
+        {
+            var states = _fileOperationsWorker.QueryStates().Select(s => new
+            {
+                Value = s.ToString(),
+                CurrentState = s.CurrentState.ToString(),
+                s.ErrorMessage,
+                s.ID
+            });
+            return new JsonResult(states.ToList());
+        }
+
         [HttpPost]
-        public async Task<IActionResult> MoveToSeries([FromBody] MoveToSeries moves)
+        public async Task<IActionResult> MoveToSeriesAsync([FromBody] MoveToSeries moves)
         {
             if (!ModelState.IsValid)
             {
@@ -81,6 +96,20 @@ namespace MovieMoverCore.Controllers
             }
 
             return new OkResult();
+        }
+
+        [HttpPost]
+        public IActionResult DismissFmo([FromBody] int id)
+        {
+            if (ModelState.IsValid)
+            {
+                if (_fileOperationsWorker.DismissState(id))
+                {
+                    return new OkResult();
+                }
+                return new NotFoundResult();
+            }
+            return new BadRequestResult();
         }
     }
 }

@@ -24,14 +24,14 @@ namespace MovieMoverCore.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> IsUpdateAvailable()
+        public async Task<IActionResult> IsUpdateAvailableAsync()
         {
             var result = await _jDownloader.IsNewUpdateAvailable();
             return new JsonResult(result);
         }
 
         [HttpPost]
-        public async Task<IActionResult> InvokeUpdate()
+        public async Task<IActionResult> InvokeUpdateAsync()
         {
             if (ModelState.IsValid)
             {
@@ -49,7 +49,7 @@ namespace MovieMoverCore.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> InvokeUpdateCheck()
+        public async Task<IActionResult> InvokeUpdateCheckAsync()
         {
             if (ModelState.IsValid)
             {
