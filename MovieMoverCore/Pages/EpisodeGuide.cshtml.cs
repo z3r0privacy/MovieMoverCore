@@ -131,38 +131,6 @@ namespace MovieMoverCore.Pages
             }).ToList());
         }
 
-        public IActionResult OnPostDownloadVideo([FromBody] int id)
-        {
-            var tmpStr = TempData["vidDls"].ToString();
-            TempData["vidDls"] = tmpStr;
-
-            var data = JsonSerializer.Deserialize<List<TempDlData>>(tmpStr);
-
-            var dl = data.FirstOrDefault(item => item.SeriesId == id);
-            if (dl == default)
-            {
-                return new JsonResult("Not Found");
-            }
-
-            return new JsonResult($"Downloading: {dl.Links.Count} links");
-        }
-
-        public IActionResult OnPostDownloadSub([FromBody] int id)
-        {
-            var tmpStr = TempData["subDls"].ToString();
-            TempData["subDls"] = tmpStr;
-
-            var data = JsonSerializer.Deserialize<List<TempDlData>>(tmpStr);
-
-            var dl = data.FirstOrDefault(item => item.SeriesId == id);
-            if (dl == default)
-            {
-                return new JsonResult("Not Found");
-            }
-
-            return new JsonResult($"Downloading: {dl.Links.Count} subs");
-        }
-
         public string GetEpisodeString(EpisodeInfo ei)
         {
             return $"S{ei.Season:00}E{ei.Episode:00} {ei.AirDate:dd.MM.yyyy}<br /><i>{ei.Title}</i>";

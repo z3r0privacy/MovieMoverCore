@@ -44,22 +44,8 @@
                                 @if (s.nextEpisode.EpisodeInfo.AirDate <= DateTime.Now)
                                 {
 
-                                    @if (s.nextEpisode.IsVideoDDL)
-                                    {
-                                        <a href="#" class="card-link" onclick="dlVideo(@s.nextEpisode.EpisodeInfo.Series.Id)">Download Video</a>
-                                    }
-                                    else
-                                    {
-                                        <a href="@s.nextEpisode.VideoLink[0]" target="_blank" class="card-link">Search Video</a>
-                                    }
-                                    @if (s.nextEpisode.IsSubtitleDDL)
-                                    {
-                                        <a href="#" class="card-link" onclick="dlSub(@s.nextEpisode.EpisodeInfo.Series.Id)">Download Subtitle</a>
-                                    }
-                                    else
-                                    {
-                                        <a href="@s.nextEpisode.SubtitleLink" target="_blank" class="card-link">Search Subtitle</a>
-                                    }
+                                    <a href="@s.nextEpisode.VideoLink[0]" target="_blank" class="card-link">Search Video</a>
+                                    <a href="@s.nextEpisode.SubtitleLink" target="_blank" class="card-link">Search Subtitle</a>
                                 }
                             }
                             else

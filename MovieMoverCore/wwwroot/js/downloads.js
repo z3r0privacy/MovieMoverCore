@@ -272,7 +272,7 @@ function addLinks() {
 }
 
 function updateSelectedSeason() {
-    document.getElementById("season").value = $seasonData[document.getElementById("seriesSelector").selectedIndex].LastSelectedSeason; // document.getElementById("seriesSelector").value.tag;
+    document.getElementById("season").value = $seasonData[document.getElementById("seriesSelector").selectedIndex].lastSelectedSeason; // document.getElementById("seriesSelector").value.tag;
 }
 
 function moveSeries() {
