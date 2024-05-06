@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using MovieMoverCore.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -125,6 +127,16 @@ namespace MovieMoverCore.Services
         {
             var timeSpan = (dateTime - new DateTime(1970, 1, 1, 0, 0, 0));
             return (long)timeSpan.TotalSeconds;
+        }
+
+        public static IApplicationBuilder UseTimingMiddleware(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<TimingMiddleware>();
+        }
+
+        public static IServiceCollection UseSharedData(this IServiceCollection services)
+        {
+            return services.AddSingleton(typeof(ISharedData<>), typeof(SharedData<>));
         }
     }
 }

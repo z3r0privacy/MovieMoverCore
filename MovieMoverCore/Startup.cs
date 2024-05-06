@@ -36,6 +36,7 @@ namespace MovieMoverCore
             services.UseCache();
             services.UseJDownloader();
             services.UseHistory();
+            services.UseSharedData();
 
             //services.UseSettings();
             //services.UseDatabase(true);
@@ -76,6 +77,8 @@ namespace MovieMoverCore
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseTimingMiddleware();
 
             app.UseEndpoints(endpoints =>
             {
