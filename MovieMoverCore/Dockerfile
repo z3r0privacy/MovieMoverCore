@@ -30,7 +30,7 @@ ENV FILES_Downloads=downloads
 ENV FILES_Movies=movies
 ENV FILES_Series=series
 ENV FILES_KeepSuccess=5
-ENV SUBS_SearchLink=https://www.addic7ed.com/search.php?search={0} {1}x{2}&amp;Submit=Search
+ENV SUBS_SearchLink=https://www.addic7ed.com/serie/{0}/{1}/{2}/Title
 ENV EPGUIDE_AllShows=https://epguides.com/common/allshows.txt
 ENV EPGUIDE_SearchLink=https://epguides.com/common/exportToCSVmaze.asp?maze={0}
 ENV DL_Series_SearchLink=https://2ddl.ms/?q={0}
