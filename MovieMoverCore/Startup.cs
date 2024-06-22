@@ -71,7 +71,12 @@ namespace MovieMoverCore
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            string http_redirect = Environment.GetEnvironmentVariable("MOVER_https_redirect");
+            if (http_redirect != null && http_redirect.Trim().Equals("true", StringComparison.CurrentCultureIgnoreCase))
+            {
+                app.UseHttpsRedirection();
+            }
+            
             app.UseStaticFiles();
 
             app.UseRouting();

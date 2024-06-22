@@ -23,6 +23,7 @@ VOLUME /appdata
 VOLUME /data
 VOLUME /cert
 
+ENV MOVER_https_redirect=true
 ENV PLEX_BaseUrl=
 ENV PLEX_MoviesSection=
 ENV PLEX_SeriesSection=
