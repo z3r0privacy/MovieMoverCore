@@ -176,7 +176,7 @@ namespace MovieMoverCore.Services
                     moveOp.CurrentState = FileOperationState.InOperation;
                     try
                     {
-                        moveOp.PerformOperation(_jDownloader, _plex, _logger);
+                        moveOp.PerformOperation(_jDownloader, _plex, _logger, _settings);
                         moveOp.CurrentState = FileOperationState.Success;
                     }
                     catch (Exception ex)

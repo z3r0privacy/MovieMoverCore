@@ -23,6 +23,7 @@ namespace MovieMoverCore.Services
         public string Files_MoviesPath { get; }
         public string Files_SeriesPath { get; }
         public int Files_KeepSuccess { get; }
+        public IList<(string, string)> Files_RenameSchemes { get; }
 
         public string Subtitles_SearchLink { get; }
         public string EpGuide_SearchLink { get; }
@@ -80,6 +81,7 @@ namespace MovieMoverCore.Services
 
         public string AppDataDirectory => "/appdata";
 
+        public IList<(string, string)> Files_RenameSchemes { get; private set; }
 
         private List<RemoteCertificateValidationCallback> _customValidators;
 
@@ -154,6 +156,19 @@ namespace MovieMoverCore.Services
                 _logger.LogDebug("Reading JD local Api Path from secrets folder");
             }
 #endif
+
+            Files_RenameSchemes = new List<(string, string)>();
+            var rename_file = Path.Combine(AppDataDirectory, "renamings.list");
+            if (Path.Exists(rename_file))
+            {
+                var renamings = File.ReadLines(rename_file);
+                foreach (var renaming in renamings)
+                {
+                    if (string.IsNullOrWhiteSpace(renaming)) continue;  
+                    var parts = renaming.Split(new string[] { "|||" }, StringSplitOptions.None);
+                    Files_RenameSchemes.Add((parts[0], parts[1]));
+                }
+            }
 
             ValidateSettings();
         }

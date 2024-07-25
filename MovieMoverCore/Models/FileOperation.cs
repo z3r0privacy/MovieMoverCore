@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace MovieMoverCore.Models
 {
@@ -15,7 +16,7 @@ namespace MovieMoverCore.Models
         DateTime? Finished { get; set; }
         string ErrorMessage { get; set; }
 
-        void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger);
+        void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings);
     }
 
     public class FileDeleteOperation : IFileOperation
@@ -48,7 +49,7 @@ namespace MovieMoverCore.Models
             return Clone();
         }
 
-        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger)
+        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings)
         {
             if (Directory.Exists(Source))
             {
@@ -126,8 +127,103 @@ namespace MovieMoverCore.Models
             Directory.Delete(source);
         }
         
-        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger)
+        private bool CanBeRenamed(string path, IList<(string rgx, string pattern)> renamings, out string newPath)
         {
+            var name = Path.GetFileName(path);
+            foreach ((var rgx, var pattern) in renamings)
+            {
+                var match = Regex.Match(name, rgx);
+                if (match.Success)
+                {
+                    newPath = pattern;
+                    var failed = false;
+                    while (newPath.IndexOf("[[") >= 0)
+                    {
+                        var start = newPath.IndexOf("[[");
+                        var end = newPath.IndexOf("]]");
+                        var val = match.Groups[newPath.Substring(start+2, end-start-2)].Value;
+                        if (string.IsNullOrEmpty(val))
+                        {
+                            failed = true;
+                            break;
+                        }
+                        newPath = string.Concat(newPath.AsSpan(0, start), val, newPath.AsSpan(end + 2));
+                    }
+                    if (failed)
+                    {
+                        newPath = null;
+                        continue;
+                    }
+                    newPath = newPath.Replace('.', ' ');
+                    if (File.Exists(path))
+                    {
+                        var ending = path.Split('.')[^1];
+                        newPath += "." + ending;
+                    }
+                    newPath = Path.Combine(Path.GetDirectoryName(path), newPath);
+                    return true;
+                }
+            }
+            newPath = null;
+            return false;
+        }
+        private void ApplyRenamingsDir(string currPath, IList<(string rgx, string pattern)> renamings)
+        {
+            foreach (var entry in Directory.GetFileSystemEntries(currPath))
+            {
+                if (Directory.Exists(entry))
+                {
+                    ApplyRenamingsDir(entry, renamings);
+                }
+                if (CanBeRenamed(entry, renamings, out var newPath))
+                {
+                    if (Directory.Exists(entry))
+                    {
+                        Directory.Move(entry, newPath);
+                    } else
+                    {
+                        File.Move(entry, newPath);
+                    }
+                }
+            }
+        }
+        private void ApplyRenamings(IList<(string rgx, string pattern)> renamings)
+        {
+            var srcRenameable = CanBeRenamed(Source, renamings, out var newSource);
+            if (Directory.Exists(Source))
+            {
+                ApplyRenamingsDir(Source, renamings);
+                if (srcRenameable)
+                {
+                    Directory.Move(Source, newSource);
+                }
+            } else
+            {
+                if (srcRenameable)
+                {
+                    File.Move(Source, newSource);
+                }
+            }
+            if (srcRenameable)
+            {
+                Source = newSource;
+            }
+            if (CanBeRenamed(Destination, renamings, out var newDest))
+            {
+                Destination = newDest;
+            }
+        }
+
+        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings)
+        {
+            var originalSource = Source;
+            try
+            {
+                ApplyRenamings(_settings.Files_RenameSchemes);
+            } catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to apply renames");
+            }
             if (Directory.Exists(Source))
             {
                 var parentDir = Path.GetDirectoryName(Destination);
@@ -149,7 +245,7 @@ namespace MovieMoverCore.Models
             Task.Run(() =>
             {
                 _plex.RefreshSectionAsync(PlexSection, Destination).FireForget(_logger);
-                _jDownloader.RemoveDownloadPackageAsync(Path.GetFileName(Source)).FireForget(_logger);
+                _jDownloader.RemoveDownloadPackageAsync(Path.GetFileName(originalSource)).FireForget(_logger);
             });
         }
     }

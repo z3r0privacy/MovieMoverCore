@@ -25,6 +25,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="DockerVolumes\AppData\renamings.list" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="DockerVolumes\AppData\renamings.list">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="csvhelper" Version="30.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
@@ -37,7 +47,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DockerVolumes\AppData\" />
     <Folder Include="DockerVolumes\data\downloads\" />
     <Folder Include="DockerVolumes\data\movies\" />
     <Folder Include="DockerVolumes\data\series\" />
