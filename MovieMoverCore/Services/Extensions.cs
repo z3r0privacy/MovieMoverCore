@@ -40,13 +40,18 @@ namespace MovieMoverCore.Services
             return services.AddSingleton<ISettings, Settings>();
         }
 
-        public static IServiceCollection UsePlex(this IServiceCollection services, bool useMock = false)
+        public static IServiceCollection UseMultimediaServerManagerCollection(this IServiceCollection services)
+        {
+            return services.AddSingleton<IMultimediaServerManagerCollection, MultimediaServerManagerCollection>();
+        }
+
+        public static IServiceCollection UseMultimediaMetadataProvider(this IServiceCollection services, bool useMock = false)
         {
             if (useMock)
             {
-                return services.AddSingleton<IPlex, PlexMock>();
+                return services.AddSingleton<IMultimediaMetadataProvider, PlexMock>();
             }
-            return services.AddSingleton<IPlex, Plex>();
+            return services.AddSingleton<IMultimediaMetadataProvider, Plex>();
         }
 
         public static IServiceCollection UseFileMover(this IServiceCollection services, bool useMock = false)
@@ -137,6 +142,14 @@ namespace MovieMoverCore.Services
         public static IServiceCollection UseSharedData(this IServiceCollection services)
         {
             return services.AddSingleton(typeof(ISharedData<>), typeof(SharedData<>));
+        }
+
+        public static void DoForEach<Element>(this IList<Element> list, Action<Element> action)
+        {
+            foreach (var el in list)
+            {
+                action(el);
+            }
         }
     }
 }

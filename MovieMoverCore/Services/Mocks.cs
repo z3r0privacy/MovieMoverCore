@@ -225,7 +225,7 @@ namespace MovieMoverCore.Services
             return null;
         }
 
-        public FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection)
+        public FileMoveOperation QueueMoveOperation(string name, string source, string destination, MultimediaType plexSection)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
             return null;
@@ -322,9 +322,12 @@ namespace MovieMoverCore.Services
         }
     }
 
-    public class PlexMock : IPlex
+    public class PlexMock : IMultimediaMetadataProvider, IMultimediaServerManager
     {
         private ILogger<PlexMock> _logger;
+
+        public bool IsMultimediaManagerEnabled => true;
+
         public PlexMock(ILogger<PlexMock> logger)
         {
             _logger = logger;
@@ -348,13 +351,13 @@ namespace MovieMoverCore.Services
             return Task.FromResult(new List<(string id, string name)>());
         }
 
-        public Task RefreshSectionAsync(PlexSection section, string path = null)
+        public Task InformUpdatedFilesAsync(MultimediaType section, string path = null)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
             return Task.CompletedTask;
         }
 
-        public bool ResolvePlexId(Series series)
+        public bool ResolveProviderId(Series series)
         {
             _logger.LogInformation($"Called method {MethodBase.GetCurrentMethod()}");
             return false;

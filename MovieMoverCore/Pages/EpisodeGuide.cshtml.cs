@@ -19,17 +19,17 @@ namespace MovieMoverCore.Pages
         public List<EpisodeInfo> UpcomingEpisodes;
 
         private readonly IDatabase _db;
-        private readonly IPlex _plex;
+        private readonly IMultimediaMetadataProvider _metadataProvider;
         private readonly IEpGuide _epGuide;
         private readonly ISubtitles _subtitles;
         private readonly ILogger<EpisodeGuideModel> _logger;
         private readonly ISeriesVideoSearcher _seriesVideoSearcher;
 
-        public EpisodeGuideModel(IDatabase db, IPlex plex, IEpGuide epGuide, ISubtitles subtitles,
+        public EpisodeGuideModel(IDatabase db, IMultimediaMetadataProvider metadataProvider, IEpGuide epGuide, ISubtitles subtitles,
             ILogger<EpisodeGuideModel> logger, ISeriesVideoSearcher seriesVideoSearcher)
         {
             _db = db;
-            _plex = plex;
+            _metadataProvider = metadataProvider;
             _logger = logger;
             _epGuide = epGuide;
             _subtitles = subtitles;
@@ -38,7 +38,7 @@ namespace MovieMoverCore.Pages
 
         private async Task<(EpisodeInfo newestPlexEpisode, CrawledDownloadPackage nextEpisode, List<EpisodeInfo> upcoming)> GatherInfo(Series series)
         {
-            var newestPlex = await _plex.GetNewestEpisodeAsync(series);
+            var newestPlex = await _metadataProvider.GetNewestEpisodeAsync(series);
             var epInfo = await _epGuide.GetEpisodesAsync(newestPlex);
             var nextInfo = new CrawledDownloadPackage
             {

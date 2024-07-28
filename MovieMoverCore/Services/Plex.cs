@@ -17,20 +17,22 @@ using System.Xml;
 namespace MovieMoverCore.Services
 {
     
-    public interface IPlex
-    {
-        Task<EpisodeInfo> GetNewestEpisodeAsync(Series series);
-        Task RefreshSectionAsync(PlexSection section, string path = null);
-        Task<List<(string id, string name)>> GetSeriesNamesAsync();
-        Task<string> GetFilePathOfEpisode(Series series, int season, int episode);
-        bool ResolvePlexId(Series series);
-    }
+    //public interface IPlex
+    //{
+    //    Task<EpisodeInfo> GetNewestEpisodeAsync(Series series);
+    //    Task RefreshSectionAsync(MultimediaType section, string path = null);
+    //    Task<List<(string id, string name)>> GetSeriesNamesAsync();
+    //    Task<string> GetFilePathOfEpisode(Series series, int season, int episode);
+    //    bool ResolvePlexId(Series series);
+    //}
 
-    public class Plex : IPlex
+    public class Plex : IMultimediaMetadataProvider, IMultimediaServerManager
     {
         private readonly ISettings _settings;
         private readonly ILogger<Plex> _logger;
         private readonly HttpClientHandler _httpClientHandler;
+
+        public bool IsMultimediaManagerEnabled => true;
 
         public Plex(ISettings settings, ILogger<Plex> logger)
         {
@@ -80,7 +82,7 @@ namespace MovieMoverCore.Services
 
             var hc = new HttpClient(_httpClientHandler);
             // var wc = new WebClient();
-            var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.PlexId}/allLeaves?X-Plex-Token={{0}}";
+            var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.MetadataProviderId}/allLeaves?X-Plex-Token={{0}}";
             _logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
             var response = await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
             var epsData = await response.Content.ReadAsStringAsync();
@@ -106,13 +108,13 @@ namespace MovieMoverCore.Services
             };
         }
 
-        public async Task RefreshSectionAsync(PlexSection section, string path = null)
+        public async Task InformUpdatedFilesAsync(MultimediaType section, string path = null)
         {
             string refreshId;
-            if (section == PlexSection.Movies)
+            if (section == MultimediaType.Movies)
             {
                 refreshId = _settings.Plex_MoviesSectionId;
-            } else if (section == PlexSection.Series)
+            } else if (section == MultimediaType.Series)
             {
                 refreshId = _settings.Plex_SeriesSectionId;
             } else
@@ -157,7 +159,7 @@ namespace MovieMoverCore.Services
         {
             var hc = new HttpClient(_httpClientHandler);
             //var wc = new WebClient();
-            var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.PlexId}/allLeaves?X-Plex-Token={{0}}";
+            var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.MetadataProviderId}/allLeaves?X-Plex-Token={{0}}";
             _logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
             var response = await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
             var epData = await response.Content.ReadAsStringAsync();
@@ -175,7 +177,7 @@ namespace MovieMoverCore.Services
             return node.SelectSingleNode("Media/Part").Attributes["file"].InnerText;
         }
 
-        public bool ResolvePlexId(Series series)
+        public bool ResolveProviderId(Series series)
         {
             var plexData = GetSeriesNamesAsync().Result;
 
@@ -186,7 +188,7 @@ namespace MovieMoverCore.Services
             }
 
             series.Name = entry.name;
-            series.PlexId = entry.id;
+            series.MetadataProviderId = entry.id;
 
             return true;
         }

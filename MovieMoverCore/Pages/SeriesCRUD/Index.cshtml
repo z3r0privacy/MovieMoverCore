@@ -5,12 +5,18 @@
     ViewData["Title"] = "Maintenance";
 }
 
+@section Scripts {
+    <script type="text/javascript" src="~/js/maintenance.js"></script>
+}
+
+
 <h1>Maintenance</h1>
 
 <h4>JDownloader</h4>
 <p>
     <a href="#" onclick="invokeJDUpdateSearch();">Invoke Update search</a> <span id="state_serachjdupdate"></span>
 </p>
+
 <p></p>
 <h4>Series Data</h4>
 
@@ -77,3 +83,32 @@
 }
     </tbody>
 </table>
+
+<p></p>
+    
+<h4>Download Name Transformations</h4>
+<p>
+    <a href="#" onclick="reloadRenames();">Reload Renamings</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Regex
+            </th>
+            <th>
+                Template
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Renamings)
+        {
+            <tr>
+                <td>@item.Regex</td>
+                <td>@item.Template</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

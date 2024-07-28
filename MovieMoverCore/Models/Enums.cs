@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MovieMoverCore.Models
 {
-    public enum PlexSection
+    public enum MultimediaType
     {
         Movies, Series
     }

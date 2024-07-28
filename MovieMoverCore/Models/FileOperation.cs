@@ -16,7 +16,7 @@ namespace MovieMoverCore.Models
         DateTime? Finished { get; set; }
         string ErrorMessage { get; set; }
 
-        void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings);
+        void PerformOperation(IJDownloader _jDownloader, IMultimediaServerManagerCollection _multimediaServers, ILogger<FileOperationsWorker> _logger, ISettings _settings);
     }
 
     public class FileDeleteOperation : IFileOperation
@@ -49,7 +49,7 @@ namespace MovieMoverCore.Models
             return Clone();
         }
 
-        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings)
+        public void PerformOperation(IJDownloader _jDownloader, IMultimediaServerManagerCollection _multimediaServer, ILogger<FileOperationsWorker> _logger, ISettings _settings)
         {
             if (Directory.Exists(Source))
             {
@@ -75,7 +75,7 @@ namespace MovieMoverCore.Models
         public FileOperationState CurrentState { get; set; }
         public string Source { get; set; }
         public string Destination { get; set; }
-        public PlexSection PlexSection { get; set; }
+        public MultimediaType MultimediaType { get; set; }
         public DateTime? Finished { get; set; }
         public string ErrorMessage { get; set; }
         public string Name { get; set; }
@@ -90,7 +90,7 @@ namespace MovieMoverCore.Models
                 Finished = Finished,
                 ID = ID,
                 Name = Name,
-                PlexSection = PlexSection,
+                MultimediaType = MultimediaType,
                 Source = Source
             };
         }
@@ -214,7 +214,7 @@ namespace MovieMoverCore.Models
             }
         }
 
-        public void PerformOperation(IJDownloader _jDownloader, IPlex _plex, ILogger<FileOperationsWorker> _logger, ISettings _settings)
+        public void PerformOperation(IJDownloader _jDownloader, IMultimediaServerManagerCollection _multimediaServer, ILogger<FileOperationsWorker> _logger, ISettings _settings)
         {
             var originalSource = Source;
             try
@@ -244,7 +244,7 @@ namespace MovieMoverCore.Models
 
             Task.Run(() =>
             {
-                _plex.RefreshSectionAsync(PlexSection, Destination).FireForget(_logger);
+                _multimediaServer.Managers.DoForEach(mgr => mgr.InformUpdatedFilesAsync(MultimediaType, Destination).FireForget(_logger));
                 _jDownloader.RemoveDownloadPackageAsync(Path.GetFileName(originalSource)).FireForget(_logger);
             });
         }

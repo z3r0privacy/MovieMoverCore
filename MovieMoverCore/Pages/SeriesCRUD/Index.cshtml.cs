@@ -13,14 +13,17 @@ namespace MovieMoverCore.Pages.SeriesCRUD
     public class IndexModel : PageModel
     {
         private readonly IDatabase _db;
+        private readonly ISettings _settings;
 
-        public IndexModel(IDatabase db)
+        public IndexModel(IDatabase db, ISettings settings)
         {
             //_context = context;
             _db = db;
+            _settings = settings;
         }
 
         public IList<Series> Series { get;set; }
+        public IList<(string Regex, string Template)> Renamings => _settings.Files_RenameSchemes;
 
         public void OnGet()
         {

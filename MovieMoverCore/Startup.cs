@@ -28,7 +28,8 @@ namespace MovieMoverCore
         {
             services.UseSettings();
             services.UseDatabase();
-            services.UsePlex();
+            services.UseMultimediaMetadataProvider();
+            services.UseMultimediaServerManagerCollection();
             services.UseFileMover();
             services.UseEpGuide();
             services.UseSeriesVideoSearcher();

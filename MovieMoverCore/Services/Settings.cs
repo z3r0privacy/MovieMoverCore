@@ -19,6 +19,9 @@ namespace MovieMoverCore.Services
         string Plex_MoviesSectionId { get; }
         string Plex_SeriesSectionId { get; }
 
+        string Jellyfin_BaseUrl { get; }
+        string Jellyfin_ApiToken { get; }
+
         public string Files_DownloadsPath { get; }
         public string Files_MoviesPath { get; }
         public string Files_SeriesPath { get; }
@@ -40,6 +43,7 @@ namespace MovieMoverCore.Services
         public int JD_MaxRefreshInterval { get; }
         public string JD_DownloadPath { get; }
 
+        public void LoadRenamings();
         void RegisterCertificateValidationCallback(RemoteCertificateValidationCallback callBack);
     }
 
@@ -53,6 +57,8 @@ namespace MovieMoverCore.Services
 
         public string Plex_SeriesSectionId { get; private set; }
 
+        public string Jellyfin_BaseUrl { get; private set; }
+        public string Jellyfin_ApiToken { get; private set; }
 
         public string Files_DownloadsPath { get; private set; }
         public string Files_MoviesPath { get; private set; }
@@ -117,6 +123,18 @@ namespace MovieMoverCore.Services
             Plex_MoviesSectionId = Environment.GetEnvironmentVariable("PLEX_MoviesSection");
             Plex_SeriesSectionId = Environment.GetEnvironmentVariable("PLEX_SeriesSection");
 
+            Jellyfin_BaseUrl = Environment.GetEnvironmentVariable("JELLYFIN_BaseUrl");
+            Jellyfin_ApiToken = Environment.GetEnvironmentVariable("JELLYFIN_ApiToken");
+            if ((Jellyfin_BaseUrl == null || Jellyfin_ApiToken == null) && File.Exists("/secrets/jellyfin.txt"))
+            {
+                var jellyfin_data = File.ReadAllText("/secrets/jellyfin.txt").Split("|");
+                Jellyfin_BaseUrl = jellyfin_data[0];
+                Jellyfin_ApiToken = jellyfin_data[1];
+            }
+            if (!Jellyfin_BaseUrl.EndsWith("/"))
+            {
+                Jellyfin_BaseUrl += "/";
+            }
 
             Files_DownloadsPath = Path.Combine("/data", Environment.GetEnvironmentVariable("FILES_Downloads"));
             Files_MoviesPath = Path.Combine("/data", Environment.GetEnvironmentVariable("FILES_Movies"));
@@ -157,6 +175,13 @@ namespace MovieMoverCore.Services
             }
 #endif
 
+            LoadRenamings();
+
+            ValidateSettings();
+        }
+
+        public void LoadRenamings()
+        {
             Files_RenameSchemes = new List<(string, string)>();
             var rename_file = Path.Combine(AppDataDirectory, "renamings.list");
             if (Path.Exists(rename_file))
@@ -164,13 +189,11 @@ namespace MovieMoverCore.Services
                 var renamings = File.ReadLines(rename_file);
                 foreach (var renaming in renamings)
                 {
-                    if (string.IsNullOrWhiteSpace(renaming)) continue;  
+                    if (string.IsNullOrWhiteSpace(renaming)) continue;
                     var parts = renaming.Split(new string[] { "|||" }, StringSplitOptions.None);
                     Files_RenameSchemes.Add((parts[0], parts[1]));
                 }
             }
-
-            ValidateSettings();
         }
 
         private void ValidateSettings()

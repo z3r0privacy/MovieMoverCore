@@ -19,7 +19,7 @@
                 <label asp-for="Series.Name" class="control-label"></label>
                 <input asp-for="Series.Name" class="form-control" list="Series_Name_List" />
                 <datalist id="Series_Name_List">
-                    @foreach (var name in Model.AvailablePlexSeries)
+                    @foreach (var name in Model.AvailableMetadataSeries)
                     {
                         <option>@name</option>
                     }

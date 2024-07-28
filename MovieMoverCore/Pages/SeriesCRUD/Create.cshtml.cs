@@ -14,23 +14,23 @@ namespace MovieMoverCore.Pages.SeriesCRUD
     public class CreateModel : PageModel
     {
         private readonly IDatabase _db;
-        private readonly IPlex _plex;
+        private readonly IMultimediaMetadataProvider _multimediaProvider;
         private readonly IFileMover _file;
 
-        public IList<string> AvailablePlexSeries;
+        public IList<string> AvailableMetadataSeries;
         public IList<string> AvailableDirectories;
 
-        public CreateModel(IDatabase db, IPlex plex, IFileMover file)
+        public CreateModel(IDatabase db, IMultimediaMetadataProvider metadataProvider, IFileMover file)
         {
             //_context = context;
             _db = db;
-            _plex = plex;
+            _multimediaProvider = metadataProvider;
             _file = file;
         }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            AvailablePlexSeries = (await _plex.GetSeriesNamesAsync()).Select(t => t.name).ToList();
+            AvailableMetadataSeries = (await _multimediaProvider.GetSeriesNamesAsync()).Select(t => t.name).ToList();
             AvailableDirectories = _file.GetSeriesEntries();
             return Page();
         }
@@ -47,7 +47,7 @@ namespace MovieMoverCore.Pages.SeriesCRUD
                 return Page();
             }
 
-            foreach (var (key, error) in Series.IsValid(_plex, _file, true))
+            foreach (var (key, error) in Series.IsValid(_multimediaProvider, _file, true))
             {
                 ModelState.AddModelError(key, error);
             }

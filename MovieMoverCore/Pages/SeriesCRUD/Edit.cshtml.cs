@@ -14,16 +14,16 @@ namespace MovieMoverCore.Pages.SeriesCRUD
     public class EditModel : PageModel
     {
         private IDatabase _db;
-        private readonly IPlex _plex;
+        private readonly IMultimediaMetadataProvider _metadataProvider;
         private readonly IFileMover _files;
 
-        public IList<string> AvailablePlexSeries;
+        public IList<string> AvailableMetadataSeries;
         public IList<string> AvailableDirectories;
 
-        public EditModel(IDatabase db, IPlex plex, IFileMover file)
+        public EditModel(IDatabase db, IMultimediaMetadataProvider metadataProvider, IFileMover file)
         {
             _db = db;
-            _plex = plex;
+            _metadataProvider = metadataProvider;
             _files = file;
         }
 
@@ -44,7 +44,7 @@ namespace MovieMoverCore.Pages.SeriesCRUD
                 return NotFound();
             }
 
-            AvailablePlexSeries = (await _plex.GetSeriesNamesAsync()).Select(t => t.name).ToList();
+            AvailableMetadataSeries = (await _metadataProvider.GetSeriesNamesAsync()).Select(t => t.name).ToList();
             AvailableDirectories = _files.GetSeriesEntries();
 
             return Page();
@@ -54,7 +54,7 @@ namespace MovieMoverCore.Pages.SeriesCRUD
         // more details, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
-            AvailablePlexSeries = (await _plex.GetSeriesNamesAsync()).Select(t => t.name).ToList();
+            AvailableMetadataSeries = (await _metadataProvider.GetSeriesNamesAsync()).Select(t => t.name).ToList();
             AvailableDirectories = _files.GetSeriesEntries();
 
             if (!ModelState.IsValid)
@@ -62,7 +62,7 @@ namespace MovieMoverCore.Pages.SeriesCRUD
                 return Page();
             }
 
-            foreach (var (key, error) in Series.IsValid(_plex, _files))
+            foreach (var (key, error) in Series.IsValid(_metadataProvider, _files))
             {
                 ModelState.AddModelError(key, error);
             }

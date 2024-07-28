@@ -14,7 +14,7 @@ namespace MovieMoverCore.Models
         public int Id { get; set; }
         [Required]
         public string Name { get; set; }
-        public string PlexId { get; set; }
+        public string MetadataProviderId { get; set; }
         [DisplayName("EpGuide Search")]
         public string EpGuidesName { get; set; }
         [DisplayName("Subtitle Search Name")]
@@ -39,7 +39,7 @@ namespace MovieMoverCore.Models
                 Id = Id,
                 IsFinished = IsFinished,
                 Name = Name,
-                PlexId = PlexId,
+                MetadataProviderId = MetadataProviderId,
                 SearchNewEpisodes = SearchNewEpisodes,
                 SubtitlesName = SubtitlesName,
                 VideoSearch = VideoSearch,
@@ -53,7 +53,7 @@ namespace MovieMoverCore.Models
             EpGuidesName = series.EpGuidesName;
             IsFinished = series.IsFinished;
             Name = series.Name;
-            PlexId = series.PlexId;
+            MetadataProviderId = series.MetadataProviderId;
             SearchNewEpisodes = series.SearchNewEpisodes;
             SubtitlesName = series.SubtitlesName;
             VideoSearch = series.VideoSearch;
@@ -65,11 +65,11 @@ namespace MovieMoverCore.Models
             return Clone();
         }
 
-        public List<(string key, string error)> IsValid(IPlex plex, IFileMover files, bool isNewEntry = false)
+        public List<(string key, string error)> IsValid(IMultimediaMetadataProvider _metadataProvider, IFileMover files, bool isNewEntry = false)
         {
             var errs = new List<(string key, string error)>();
 
-            if (!plex.ResolvePlexId(this) && !isNewEntry)
+            if (!_metadataProvider.ResolveProviderId(this) && !isNewEntry)
             {
                 errs.Add((nameof(Series) + "." + nameof(Name), "The given name could not be found on the Plex server."));
             }

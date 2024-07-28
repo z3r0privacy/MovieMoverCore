@@ -19,7 +19,7 @@ namespace MovieMoverCore.Services
     public interface IFileOperationsWorker
     {
         FileDeleteOperation QueueDeleteOperation(string source);
-        FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection);
+        FileMoveOperation QueueMoveOperation(string name, string source, string destination, MultimediaType plexSection);
         List<IFileOperation> QueryStates();
         FileOperationState QueryState(IFileOperation fo);
         bool DismissState(int id);
@@ -43,15 +43,17 @@ namespace MovieMoverCore.Services
         private List<IFileOperation> _allOperations;
         private ReaderWriterLockSlim _allOperationsRWLock;
         private Task _moveTask;
-        private IPlex _plex;
+        private IMultimediaMetadataProvider _metadataProvider;
+        private IMultimediaServerManagerCollection _multimediaManagers;
         private IJDownloader _jDownloader;
         private ISettings _settings;
         private ILogger<FileOperationsWorker> _logger;
         private uint _ID;
 
-        public FileOperationsWorker(IPlex plex, IJDownloader jDownloader, ISettings settings, ILogger<FileOperationsWorker> logger)
+        public FileOperationsWorker(IMultimediaMetadataProvider metadataProvider, IMultimediaServerManagerCollection multimediaManagers, IJDownloader jDownloader, ISettings settings, ILogger<FileOperationsWorker> logger)
         {
-            _plex = plex;
+            _metadataProvider = metadataProvider;
+            _multimediaManagers = multimediaManagers;
             _jDownloader = jDownloader;
             _settings = settings;
             _logger = logger;
@@ -141,7 +143,7 @@ namespace MovieMoverCore.Services
             return fdo.Clone();
         }
 
-        public FileMoveOperation QueueMoveOperation(string name, string source, string destination, PlexSection plexSection)
+        public FileMoveOperation QueueMoveOperation(string name, string source, string destination, MultimediaType plexSection)
         {
             var fmo = new FileMoveOperation
             {
@@ -150,7 +152,7 @@ namespace MovieMoverCore.Services
                 ErrorMessage = null,
                 Finished = null,
                 Name = name,
-                PlexSection = plexSection,
+                MultimediaType = plexSection,
                 Source = source
             };
 
@@ -176,7 +178,7 @@ namespace MovieMoverCore.Services
                     moveOp.CurrentState = FileOperationState.InOperation;
                     try
                     {
-                        moveOp.PerformOperation(_jDownloader, _plex, _logger, _settings);
+                        moveOp.PerformOperation(_jDownloader, _multimediaManagers, _logger, _settings);
                         moveOp.CurrentState = FileOperationState.Success;
                     }
                     catch (Exception ex)
@@ -216,14 +218,16 @@ namespace MovieMoverCore.Services
         private ILogger<FileMover> _logger;
         private IFileOperationsWorker _fileMoveWorker;
         private ISettings _settings;
-        private IPlex _plex;
+        private IMultimediaMetadataProvider _metadataProvider;
+        private IMultimediaServerManagerCollection _multimediaManagers;
 
-        public FileMover(IFileOperationsWorker fileMoveWorker, ILogger<FileMover> logger, ISettings settings, IPlex plex)
+        public FileMover(IFileOperationsWorker fileMoveWorker, ILogger<FileMover> logger, ISettings settings, IMultimediaMetadataProvider metadataProvider, IMultimediaServerManagerCollection multimediaManagers)
         {
             _logger = logger;
             _fileMoveWorker = fileMoveWorker;
             _settings = settings;
-            _plex = plex;
+            _metadataProvider = metadataProvider;
+            _multimediaManagers = multimediaManagers;
         }
 
         private bool GetEpisodeFromSrt(string name, out int season, out int episode)
@@ -282,7 +286,7 @@ namespace MovieMoverCore.Services
                 throw new ArgumentException("No season and episode information could be extracted from the given filename.");
             }
 
-            var videoPath = await _plex.GetFilePathOfEpisode(series, season, episode);
+            var videoPath = await _metadataProvider.GetFilePathOfEpisode(series, season, episode);
             if (videoPath == null)
             {
                 var dir = Path.Combine(_settings.Files_SeriesPath, series.DirectoryName, $"S{season:00}");
@@ -301,7 +305,8 @@ namespace MovieMoverCore.Services
             try
             {
                 await File.WriteAllBytesAsync(target, content);
-                _plex.RefreshSectionAsync(PlexSection.Series, Path.GetDirectoryName(target)).FireForget(_logger);
+                _multimediaManagers.Managers.DoForEach(mgr => mgr.InformUpdatedFilesAsync(MultimediaType.Series, Path.GetDirectoryName(target)).FireForget(_logger));
+                // _metadataProvider.RefreshSectionAsync(MultimediaType.Series, Path.GetDirectoryName(target)).FireForget(_logger);
                 return true;
             } catch (Exception ex)
             {
@@ -317,7 +322,7 @@ namespace MovieMoverCore.Services
                 throw new ArgumentException("Illegal download name provided. File or Folder could not be found");
             }
             return _fileMoveWorker.QueueMoveOperation(downloadName, source,
-                Path.Combine(_settings.Files_MoviesPath, downloadName), PlexSection.Movies);
+                Path.Combine(_settings.Files_MoviesPath, downloadName), MultimediaType.Movies);
         }
 
         public FileMoveOperation CreateSeriesMoveOperation(string downloadName, Series series, int? season)
@@ -332,7 +337,7 @@ namespace MovieMoverCore.Services
                 dest = Path.Combine(dest, "S" + season.Value.ToString("00"));
             }
             return _fileMoveWorker.QueueMoveOperation(downloadName, source,
-                Path.Combine(dest, downloadName), PlexSection.Series);
+                Path.Combine(dest, downloadName), MultimediaType.Series);
         }
 
         public List<string> GetDownloadEntries()
