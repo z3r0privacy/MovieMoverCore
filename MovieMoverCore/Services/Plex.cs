@@ -125,7 +125,7 @@ namespace MovieMoverCore.Services
             var query = $"{_settings.Plex_BaseUrl}library/sections/{refreshId}/refresh?X-Plex-Token={{0}}";
             if (path != null)
             {
-                query += $"&path={HttpUtility.UrlEncode(path)}";
+                //query += $"&path={HttpUtility.UrlEncode(path)}";
             }
 
             _logger.LogDebug("Refreshing a section using " + query, "***");

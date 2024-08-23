@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using MovieMoverCore.Models;
+using Newtonsoft.Json;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,7 +13,7 @@ namespace MovieMoverCore.Services
         private readonly ISettings _settings;
         private readonly ILogger<Jellyfin> _logger;
         
-        public bool IsMultimediaManagerEnabled => true;
+        public bool IsMultimediaManagerEnabled => !string.IsNullOrEmpty(_settings.Jellyfin_ApiToken);
 
         public Jellyfin(ISettings settings, ILogger<Jellyfin> logger)
         {
@@ -21,6 +23,7 @@ namespace MovieMoverCore.Services
 
         public async Task InformUpdatedFilesAsync(MultimediaType type, string path)
         {
+            /*
             var bodyData = """
                 {
                     "Updates": [
@@ -31,11 +34,12 @@ namespace MovieMoverCore.Services
                     ]
                 }
                 """.Replace("{0}", path);
-
+            */
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("Authorization", $"MediaBrowser Token=\"{_settings.Jellyfin_ApiToken}\"");
-            using StringContent jsonContent = new StringContent(bodyData, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync($"{_settings.Jellyfin_BaseUrl}Library/Media/Updated", jsonContent);
+            //using StringContent jsonContent = new StringContent(bodyData, Encoding.UTF8, "application/json");
+            //var result = await httpClient.PostAsync($"{_settings.Jellyfin_BaseUrl}Library/Media/Updated", jsonContent);
+            var result = await httpClient.PostAsync($"{_settings.Jellyfin_BaseUrl}Library/Refresh", null);
             _logger.LogInformation($"Updating jellyfin path '{path}'. Result: {result.StatusCode}");
         }
     }
