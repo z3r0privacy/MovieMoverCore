@@ -296,6 +296,14 @@ namespace MovieMoverCore.Services
                 }
             }
 
+            // calculate root from mover container
+            var commonBase = Environment.GetEnvironmentVariable("FILES_Series");
+            var startCommonPath = videoPath.IndexOf(commonBase);
+            if (startCommonPath >= 0)
+            {
+                videoPath = Path.Combine(_settings.Files_SeriesPath, videoPath[(startCommonPath + commonBase.Length)..].TrimStart('/'));
+            }
+
             if (videoPath == null)
             {
                 throw new VideoDependencyNotFoundException(series, season, episode);
