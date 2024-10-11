@@ -378,12 +378,13 @@ namespace MovieMoverCore.Services
                 }
             }
 
+            var pathToCreate = Path.GetFullPath(Path.Combine(_settings.Files_SeriesPath, series.DirectoryName));
+
             if (!isNewEntry)
             {
-                return false;
+                _logger.LogWarning($"Trying to create directory {pathToCreate} altough series already exists");
             }
 
-            var pathToCreate = Path.GetFullPath(Path.Combine(_settings.Files_SeriesPath, series.DirectoryName));
             if (!pathToCreate.StartsWith(_settings.Files_SeriesPath + Path.DirectorySeparatorChar))
             {
                 _logger.LogWarning($"Tried to create a directory in the path '{pathToCreate}' using argument '{series.DirectoryName}'");
