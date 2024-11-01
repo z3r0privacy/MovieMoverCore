@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/myStyle.css" />
     @RenderSection("Styles", required: false)
+
+    // https://stackoverflow.com/a/78922252
+    <script>
+        if (window.trustedTypes && window.trustedTypes.createPolicy && !window.trustedTypes.defaultPolicy) {
+            window.trustedTypes.createPolicy('default', {
+                createHTML: string => string
+                // Optional, only needed for script (url) tags
+                //,createScriptURL: string => string
+                //,createScript: string => string,
+            });
+        }
+    </script>
 </head>
 <body>
     <header>
