@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MovieMoverCore.Helpers;
+using MovieMoverCore.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -123,6 +124,12 @@ namespace MovieMoverCore.Services
         {
             return services.AddSingleton(typeof(IHistoryCollection<>), typeof(HistoryCollection<>));
         }
+
+        public static IServiceCollection UseObtainFileBackend(this IServiceCollection services)
+        {
+            return services.AddSingleton<IFileBasedDatabase<Obtain>>(serviceProvider => new FileBasedDatabase<Obtain>(serviceProvider.GetRequiredService<ISettings>(), "obtains.json"));
+        }
+
         public static void FireForget<T>(this Task task, ILogger<T> logger)
         {
             task.ContinueWith(t => logger.LogWarning(t.Exception, "Fire-And-Forget action failed"), TaskContinuationOptions.OnlyOnFaulted);

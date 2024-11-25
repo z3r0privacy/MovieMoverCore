@@ -1,0 +1,76 @@
+﻿@page
+@model MovieMoverCore.Pages.ObtainPage
+@{
+    ViewData["Title"] = "To Obtain";
+}
+
+<h1>Movies and Series to obtain</h1>
+<div>
+    <a href="#" onclick="showAddModal()">Add new To-Do</a>
+</div>
+@for(var i = 0; i < Model.Obtains.Count; i += 3){
+    <div class="row">
+        @for(var j = 0; j < 3; j++) {
+          @if(i+j < Model.Obtains.Count) {
+                <div class="col-md-4 my-2">
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                @Html.DisplayFor(_ => Model.Obtains[i+j].Name)
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted"></h6>
+                            <p class="card-text">
+                                Availability:
+                                @Model.Obtains[i + j].ReleaseDate?.ToString("dd.MM.yyyy")
+                            </p>
+                            <p class="card-text">
+                                <a href="#" onclick="showEditModal(@Model.Obtains[i+j].Id)">Edit</a>
+                            </p>
+                            <p class="card-text">
+                                <a href="#" class="btn btn-success" onclick="downloaded(@Model.Obtains[i+j].Id)">Downloaded</a>
+                                <a href="#" class="btn btn-danger" onclick="deleteObtain(@Model.Obtains[i+j].Id)">Delete</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+          }
+        }
+    </div>
+}
+
+<div class="modal fade" id="ObtainsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="obtainModalLabel"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" role="alert" id="obtainModalError" style="display:none;">
+                    placeholder
+                </div>
+                <form>
+                    <input type="hidden" id="obtain_idx" value="" />
+                    <div class="form-group">
+                        <label for="txtname">Name</label>
+                        <input type="text" class="form-control" style="font-size:small;" id="txt_name" />
+                    </div>
+                    <div class="form-group">
+                        <label for="dateRelease">Release Date</label>
+                        <input type="text" class="form-control" style="font-size:small;" id="dateRelease" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="obtainModelSubmit"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/js/obtain.js"></script>
+}

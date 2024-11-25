@@ -12,7 +12,7 @@
             }
         })
         .fail(function (xhr, textStatus, errorThrown) {
-            $('#jd_error').innerText = "Failed getting JD State: " + xhr.responseText + " - Try reload the page manually";
+            $('#jd_error').html("Failed getting JD State: " + xhr.responseText + " - Try reload the page manually");
             $('#jd_error').slideDown();
         });
 }

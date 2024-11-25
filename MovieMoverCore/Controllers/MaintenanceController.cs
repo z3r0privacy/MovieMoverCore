@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MovieMoverCore.Models;
 using MovieMoverCore.Services;
+using System.Collections.Generic;
 
 namespace MovieMoverCore.Controllers
 {

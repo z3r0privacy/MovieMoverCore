@@ -38,6 +38,7 @@ namespace MovieMoverCore
             services.UseJDownloader();
             services.UseHistory();
             services.UseSharedData();
+            services.UseObtainFileBackend();
 
             //services.UseSettings();
             //services.UseDatabase(true);
