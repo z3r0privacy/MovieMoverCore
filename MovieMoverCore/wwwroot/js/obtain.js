@@ -1,3 +1,11 @@
+/*
+$('#dateRelease').datepicker({
+    format: "dd.mm.yyyy",
+    weekStart: 1,
+    todayHighlight: true
+});
+*/
+
 function getDetailState(xhr) {
     state = "";
     if (xhr.status === 404) {
@@ -103,6 +111,11 @@ function updateObtain() {
 
 function showModalInner(data) {
     $('#obtainModalError').hide();
+    $('#dateRelease').datepicker({
+        format: "dd.mm.yyyy",
+        weekStart: 1,
+        todayHighlight: true
+    });
     if (data === null) {
         $("#obtainModelSubmit").html("Add");
         $("#obtainModelSubmit")[0].onclick = function () {
@@ -111,7 +124,7 @@ function showModalInner(data) {
         $("#obtainModalLabel").html("Add To-Do");
         $("#obtain_idx")[0].value = "-1";
         $("#txt_name")[0].value = "";
-        $("#dateRelease")[0].value = "";
+        $("#dateRelease").datepicker('update', '');
     } else {
         $("#obtainModelSubmit").html("Update");
         $("#obtainModelSubmit")[0].onclick = function () {
@@ -120,7 +133,7 @@ function showModalInner(data) {
         $("#obtainModalLabel").html("Update To-Do");
         $("#obtain_idx")[0].value = data.id;
         $("#txt_name")[0].value = data.name;
-        $("#dateRelease")[0].value = data.releaseDate;
+        $("#dateRelease").datepicker('update', data.releaseDate);
     }
     $('#ObtainsModal').modal();
 }

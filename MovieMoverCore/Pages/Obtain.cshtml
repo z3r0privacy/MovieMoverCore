@@ -4,6 +4,10 @@
     ViewData["Title"] = "To Obtain";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker3.min.css" integrity="sha512-aQb0/doxDGrw/OC7drNaJQkIKFu6eSWnVMAwPN64p6sZKeJ4QCDYL42Rumw2ZtL8DB9f66q4CnLIUnAw28dEbg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+}
+
 <h1>Movies and Series to obtain</h1>
 <div>
     <a href="#" onclick="showAddModal()">Add new To-Do</a>
@@ -60,6 +64,12 @@
                     <div class="form-group">
                         <label for="dateRelease">Release Date</label>
                         <input type="text" class="form-control" style="font-size:small;" id="dateRelease" />
+                        <!--//<div class="input-group date" data-provide="datepicker" data-date-weekStart="1">
+                            <input type="text" class="form-control" id="dateRelease" data-date-format="dd.mm.yyyy">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-th"></span>
+                            </div>
+                        </div> //-->
                     </div>
                 </form>
             </div>
@@ -72,5 +82,6 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" integrity="sha512-LsnSViqQyaXpD4mBBdRYeP6sRwJiJveh2ZIbW41EBrNmKxgr/LFZIiWT6yr+nycvhvauz8c2nYMhrP80YhG7Cw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="~/js/obtain.js"></script>
 }

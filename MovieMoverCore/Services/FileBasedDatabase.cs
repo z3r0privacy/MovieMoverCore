@@ -67,7 +67,7 @@ namespace MovieMoverCore.Services
             _rwlock.EnterReadLock();
             try
             {
-                return _data.ToList().GetEnumerator();
+                return _data.Select(d => (T)d.Clone()).GetEnumerator();
             }
             finally
             {
@@ -79,7 +79,7 @@ namespace MovieMoverCore.Services
             _rwlock.EnterReadLock();
             try
             {
-                return _data.ToList().GetEnumerator();
+                return _data.Select(d => (T)d.Clone()).GetEnumerator();
             }
             finally
             {
@@ -94,7 +94,7 @@ namespace MovieMoverCore.Services
             {
                 var new_id = _data.Count == 0 ? 1 : _data.Max(t => t.Id) + 1;
                 data.Id = new_id;
-                _data.Add(data);
+                _data.Add((T)data.Clone());
                 Write();
                 return data;
             } finally
@@ -149,7 +149,7 @@ namespace MovieMoverCore.Services
                         _rwlock.EnterWriteLock();
                         try
                         {
-                            _data[i] = data;
+                            _data[i] = (T)data.Clone();
                             Write();
                             return;
                         } finally

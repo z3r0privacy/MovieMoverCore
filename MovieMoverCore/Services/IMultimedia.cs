@@ -45,6 +45,7 @@ namespace MovieMoverCore.Services
             {
                 Managers.Add(jellyfin);
             }
+            Managers.Add(new WebhookNotifier(settings));
         }
     }
 }
