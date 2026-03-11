@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
@@ -31,6 +32,7 @@ namespace MovieMoverCore.Services
         private readonly ISettings _settings;
         private readonly ILogger<Plex> _logger;
         private readonly HttpClientHandler _httpClientHandler;
+        private readonly SemaphoreSlim _lock;
 
         public bool IsMultimediaManagerEnabled => true;
 
@@ -42,6 +44,7 @@ namespace MovieMoverCore.Services
             {
                 ServerCertificateCustomValidationCallback = CertificateCheck
             };
+            _lock = new SemaphoreSlim(1, 1);
         }
 
         private bool CertificateCheck(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -130,10 +133,31 @@ namespace MovieMoverCore.Services
 
             _logger.LogDebug("Refreshing a section using " + query, "***");
 
-            var hc = new HttpClient(_httpClientHandler);
-            await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
-            //var wc = new WebClient();
-            //await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
+            // this is executed for every move operation, if multiple operations occur in short time,
+            // if a later move tries to start a refresh it is not started when the previous is still running
+            // however, this means that these later moves may not be recognized by plex
+            // therefore, make sure to cancel still running refreshs first and wait a short time.
+            // due to the wait, a synchronization (locking) is required
+
+            if (!await _lock.WaitAsync(0))
+            {
+                // restarting of refresh already in progress, no need to do it again
+                return;
+            }
+            // no refresh action currently being handled, do it now
+            try
+            {
+                var hc = new HttpClient(_httpClientHandler);
+                // cancel existing refresh actions
+                await hc.DeleteAsync(string.Format(query, _settings.Plex_ApiToken));
+                // wait short time
+                await Task.Delay(1000);
+                // start new 
+                await hc.GetAsync(string.Format(query, _settings.Plex_ApiToken));
+            } finally
+            {
+                _lock.Release();
+            }
         }
 
         public async Task<List<(string id, string name)>> GetSeriesNamesAsync()
