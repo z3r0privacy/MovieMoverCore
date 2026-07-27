@@ -83,6 +83,19 @@ namespace MovieMoverCore.Services
             //_logger.LogDebug($"Query episode data for {series.Name} using {query}", "***");
             //var epsData = await wc.DownloadStringTaskAsync(string.Format(query, _settings.Plex_ApiToken));
 
+            if (series.MetadataProviderId == null)
+            {
+                _logger.LogWarning($"No Metadata Provider ID set for series {series.Name}");
+                return new EpisodeInfo()
+                {
+                    AirDate = DateTime.MinValue,
+                    Episode = 0,
+                    Season = 0,
+                    Series = series,
+                    Title = "Series not found on Plex"
+                };
+            }
+
             var hc = new HttpClient(_httpClientHandler);
             // var wc = new WebClient();
             var query = $"{_settings.Plex_BaseUrl}library/metadata/{series.MetadataProviderId}/allLeaves?X-Plex-Token={{0}}";
